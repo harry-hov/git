@@ -22,6 +22,7 @@
 #include "argv-array.h"
 #include "utf8.h"
 #include "packfile.h"
+#include "protocol.h"
 #include "list-objects-filter-options.h"
 #include "commit-reach.h"
 #include "branch.h"
@@ -1752,6 +1753,10 @@ int cmd_fetch(int argc, const char **argv, const char *prefix)
 	int result = 0;
 	int prune_tags_ok = 1;
 	struct argv_array argv_gc_auto = ARGV_ARRAY_INIT;
+
+	register_allowed_protocol_version(protocol_v2);
+	register_allowed_protocol_version(protocol_v1);
+	register_allowed_protocol_version(protocol_v0);
 
 	packet_trace_identity("fetch");
 
