@@ -36,6 +36,12 @@ format.subjectPrefix::
 	The default for format-patch is to output files with the '[PATCH]'
 	subject prefix. Use this variable to change that prefix.
 
+format.inferCoverSubject::
+	A boolean that controls whether or not to take the first line of
+	the branch description as the subject for the cover letter. See the
+	`--infer-cover-subject` option in linkgit:git-format-patch[1].
+	Default is false.
+
 format.signature::
 	The default for format-patch is to output a signature containing
 	the Git version number. Use this variable to change that default.

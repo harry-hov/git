@@ -775,6 +775,7 @@ static const char *signature = git_version_string;
 static const char *signature_file;
 static int config_cover_letter;
 static const char *config_output_directory;
+static int infer_cover_subject;
 
 enum {
 	COVER_UNSET,
@@ -886,6 +887,10 @@ static int git_format_config(const char *var, const char *value, void *cb)
 		} else {
 			rev->notes_opt.use_default_notes = 1;
 		}
+		return 0;
+	}
+	if (!strcmp(var, "format.infercoversubject")) {
+		infer_cover_subject = git_config_bool(var, value);
 		return 0;
 	}
 
@@ -1007,20 +1012,6 @@ static void print_signature(FILE *file)
 	putc('\n', file);
 }
 
-static void add_branch_description(struct strbuf *buf, const char *branch_name)
-{
-	struct strbuf desc = STRBUF_INIT;
-	if (!branch_name || !*branch_name)
-		return;
-	read_branch_desc(&desc, branch_name);
-	if (desc.len) {
-		strbuf_addch(buf, '\n');
-		strbuf_addbuf(buf, &desc);
-		strbuf_addch(buf, '\n');
-	}
-	strbuf_release(&desc);
-}
-
 static char *find_branch_name(struct rev_info *rev)
 {
 	int i, positive = -1;
@@ -1072,13 +1063,17 @@ static void make_cover_letter(struct rev_info *rev, int use_stdout,
 			      int nr, struct commit **list,
 			      const char *branch_name,
 			      int quiet,
-			      int clobber)
+			      int clobber,
+			      int infer_subject)
 {
 	const char *committer;
-	const char *body = "*** SUBJECT HERE ***\n\n*** BLURB HERE ***\n";
-	const char *msg;
+	const char *subject = "*** SUBJECT HERE ***";
+	const char *body = "*** BLURB HERE ***";
+	const char *description = NULL;
 	struct shortlog log;
 	struct strbuf sb = STRBUF_INIT;
+	struct strbuf description_sb = STRBUF_INIT;
+	struct strbuf subject_sb = STRBUF_INIT;
 	int i;
 	const char *encoding = "UTF-8";
 	int need_8bit_cte = 0;
@@ -1107,17 +1102,34 @@ static void make_cover_letter(struct rev_info *rev, int use_stdout,
 	if (!branch_name)
 		branch_name = find_branch_name(rev);
 
-	msg = body;
+	if (branch_name && *branch_name)
+		read_branch_desc(&description_sb, branch_name);
+
+	if (description_sb.len) {
+		if (infer_subject) {
+			description = format_subject(&subject_sb, description_sb.buf, " ");
+			subject = subject_sb.buf;
+		} else {
+			description = description_sb.buf;
+		}
+	}
+
 	pp.fmt = CMIT_FMT_EMAIL;
 	pp.date_mode.type = DATE_RFC2822;
 	pp.rev = rev;
 	pp.print_email_subject = 1;
 	pp_user_info(&pp, NULL, &sb, committer, encoding);
-	pp_title_line(&pp, &msg, &sb, encoding, need_8bit_cte);
-	pp_remainder(&pp, &msg, &sb, 0);
-	add_branch_description(&sb, branch_name);
+	pp_title_line(&pp, &subject, &sb, encoding, need_8bit_cte);
+	pp_remainder(&pp, &body, &sb, 0);
+	if (description) {
+		strbuf_addch(&sb, '\n');
+		strbuf_addstr(&sb, description);
+		strbuf_addch(&sb, '\n');
+	}
 	fprintf(rev->diffopt.file, "%s\n", sb.buf);
 
+	strbuf_release(&description_sb);
+	strbuf_release(&subject_sb);
 	strbuf_release(&sb);
 
 	shortlog_init(&log);
@@ -1594,6 +1606,8 @@ int cmd_format_patch(int argc, const char **argv, const char *prefix)
 		{ OPTION_CALLBACK, 0, "rfc", &rev, NULL,
 			    N_("Use [RFC PATCH] instead of [PATCH]"),
 			    PARSE_OPT_NOARG | PARSE_OPT_NONEG, rfc_callback },
+		OPT_BOOL(0, "infer-cover-subject", &infer_cover_subject,
+			    N_("infer a cover letter subject from branch description")),
 		{ OPTION_CALLBACK, 0, "subject-prefix", &rev, N_("prefix"),
 			    N_("Use [<prefix>] instead of [PATCH]"),
 			    PARSE_OPT_NONEG, subject_prefix_callback },
@@ -1936,7 +1950,7 @@ int cmd_format_patch(int argc, const char **argv, const char *prefix)
 			gen_message_id(&rev, "cover");
 		make_cover_letter(&rev, use_stdout,
 				  origin, nr, list, branch_name,
-				  quiet, clobber);
+				  quiet, clobber, infer_cover_subject);
 		print_bases(&bases, rev.diffopt.file);
 		print_signature(rev.diffopt.file);
 		total++;

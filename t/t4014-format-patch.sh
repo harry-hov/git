@@ -1533,6 +1533,39 @@ test_expect_success 'format patch ignores color.ui' '
 	test_cmp expect actual
 '
 
+test_expect_success 'cover letter with config subject' '
+	test_config branch.rebuild-1.description "config subject
+
+body" &&
+	test_config format.inferCoverSubject true &&
+	git checkout rebuild-1 &&
+	git format-patch --stdout --cover-letter master >actual &&
+	grep "^Subject: \[PATCH 0/2\] config subject$" actual &&
+	grep "^body" actual
+'
+
+test_expect_success 'cover letter with command-line subject' '
+	test_config branch.rebuild-1.description "command-line subject
+
+body" &&
+	git checkout rebuild-1 &&
+	git format-patch --stdout --cover-letter --infer-cover-subject master >actual &&
+	grep "^Subject: \[PATCH 0/2\] command-line subject$" actual &&
+	grep "^body" actual
+'
+
+test_expect_success 'cover letter with command-line --no-infer-cover-subject overrides config' '
+	test_config branch.rebuild-1.description "config subject
+
+body" &&
+	test_config format.inferCoverSubject true &&
+	git checkout rebuild-1 &&
+	git format-patch --stdout --cover-letter --no-infer-cover-subject master >actual &&
+	grep "^Subject: \[PATCH 0/2\] \*\*\* SUBJECT HERE \*\*\*$" actual &&
+	grep "^config subject" actual &&
+	grep "^body" actual
+'
+
 test_expect_success 'cover letter using branch description (1)' '
 	git checkout rebuild-1 &&
 	test_config branch.rebuild-1.description hello &&
