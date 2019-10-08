@@ -162,6 +162,7 @@ int cmd_read_tree(int argc, const char **argv, const char *cmd_prefix)
 	opts.head_idx = -1;
 	opts.src_index = &the_index;
 	opts.dst_index = &the_index;
+	opts.verbose_update = isatty(2);
 
 	git_config(git_read_tree_config, NULL);
 
@@ -185,7 +186,7 @@ int cmd_read_tree(int argc, const char **argv, const char *cmd_prefix)
 
 	if (opts.reset || opts.merge || opts.prefix) {
 		if (read_cache_unmerged() && (opts.prefix || opts.merge))
-			die("You need to resolve your current index first");
+			die(_("You need to resolve your current index first"));
 		stage = opts.merge = 1;
 	}
 	resolve_undo_clear();
