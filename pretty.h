@@ -153,4 +153,7 @@ int format_set_trailers_options(struct process_trailer_options *opts,
 				const char **arg,
 				const char **err);
 
+/* Returns user_format */
+const char *get_user_format(void);
+
 #endif /* PRETTY_H */
