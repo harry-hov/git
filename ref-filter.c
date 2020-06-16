@@ -989,6 +989,17 @@ static void grab_commit_values(struct atom_value *val, int deref, struct object 
 			v->value = commit_list_count(commit->parents);
 			v->s = xstrfmt("%lu", (unsigned long)v->value);
 		}
+		else if (!strcmp(name, "parent:short")) {
+			struct commit_list *parents;
+			struct strbuf s = STRBUF_INIT;
+			for (parents = commit->parents; parents; parents = parents->next) {
+				struct commit *parent = parents->item;
+				if (parents != commit->parents)
+					strbuf_addch(&s, ' ');
+				strbuf_addstr(&s, find_unique_abbrev(&parent->object.oid, DEFAULT_ABBREV));
+			}
+			v->s = strbuf_detach(&s, NULL);
+		}
 		else if (!strcmp(name, "parent")) {
 			struct commit_list *parents;
 			struct strbuf s = STRBUF_INIT;
