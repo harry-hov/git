@@ -15,8 +15,14 @@ static size_t convert_format(struct strbuf *sb, const char *start, void *data)
 	case 'T':
 		strbuf_addstr(sb, "%(tree)");
 		return 1;
+	case 't':
+		strbuf_addstr(sb, "%(tree:short)");
+		return 1;
 	case 'P':
 		strbuf_addstr(sb, "%(parent)");
+		return 1;
+	case 'p':
+		strbuf_addstr(sb, "%(parent:short)");
 		return 1;
 	case 'a':
 		if (start[1] == 'n')
