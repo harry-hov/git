@@ -138,6 +138,9 @@ char *get_head_description(void);
 /*  Set up translated strings in the output. */
 void setup_ref_filter_porcelain_msg(void);
 
+/* Sanitize subject */
+void format_sanitized_subject(struct strbuf *sb, const char *msg);
+
 /*
  * Print a single ref, outside of any ref-filter. Note that the
  * name must be a fully qualified refname.

@@ -127,7 +127,7 @@ static struct used_atom {
 			unsigned int nobracket : 1, push : 1, push_remote : 1;
 		} remote_ref;
 		struct {
-			enum { C_BARE, C_BODY, C_BODY_DEP, C_LINES, C_SIG, C_SUB, C_TRAILERS } option;
+			enum { C_BARE, C_BODY, C_BODY_DEP, C_LINES, C_SIG, C_SUB, C_SUB_SANITIZE, C_TRAILERS } option;
 			struct process_trailer_options trailer_opts;
 			unsigned int nlines;
 		} contents;
@@ -297,8 +297,14 @@ static int body_atom_parser(const struct ref_format *format, struct used_atom *a
 static int subject_atom_parser(const struct ref_format *format, struct used_atom *atom,
 			       const char *arg, struct strbuf *err)
 {
-	if (arg)
-		return strbuf_addf_ret(err, -1, _("%%(subject) does not take arguments"));
+	if (arg) {
+		if (!strcmp(arg, "sanitize")) {
+			atom->u.contents.option = C_SUB_SANITIZE;
+			return 0;
+		} else {
+			return strbuf_addf_ret(err, -1, _("%%(subject) does not take arguments"));
+		}
+	}
 	atom->u.contents.option = C_SUB;
 	return 0;
 }
@@ -1237,6 +1243,40 @@ static void append_lines(struct strbuf *out, const char *buf, unsigned long size
 	}
 }
 
+static int istitlechar(char c)
+{
+	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+		(c >= '0' && c <= '9') || c == '.' || c == '_';
+}
+
+void format_sanitized_subject(struct strbuf *sb, const char *msg)
+{
+	size_t trimlen;
+	size_t start_len = sb->len;
+	int space = 2;
+
+	for (; *msg && *msg != '\n'; msg++) {
+		if (istitlechar(*msg)) {
+			if (space == 1)
+				strbuf_addch(sb, '-');
+			space = 0;
+			strbuf_addch(sb, *msg);
+			if (*msg == '.')
+				while (*(msg+1) == '.')
+					msg++;
+		} else
+			space |= 1;
+	}
+
+	/* trim any trailing '.' or '-' characters */
+	trimlen = 0;
+	while (sb->len - trimlen > start_len &&
+		(sb->buf[sb->len - 1 - trimlen] == '.'
+		|| sb->buf[sb->len - 1 - trimlen] == '-'))
+		trimlen++;
+	strbuf_remove(sb, sb->len - trimlen, trimlen);
+}
+
 /* See grab_values */
 static void grab_sub_body_contents(struct atom_value *val, int deref, void *buf)
 {
@@ -1248,11 +1288,13 @@ static void grab_sub_body_contents(struct atom_value *val, int deref, void *buf)
 		struct used_atom *atom = &used_atom[i];
 		const char *name = atom->name;
 		struct atom_value *v = &val[i];
+
 		if (!!deref != (*name == '*'))
 			continue;
 		if (deref)
 			name++;
 		if (strcmp(name, "subject") &&
+			strcmp(name, "subject:sanitize") &&
 		    strcmp(name, "body") &&
 		    !starts_with(name, "trailers") &&
 		    !starts_with(name, "contents"))
@@ -1263,7 +1305,11 @@ static void grab_sub_body_contents(struct atom_value *val, int deref, void *buf)
 				    &bodypos, &bodylen, &nonsiglen,
 				    &sigpos, &siglen);
 
-		if (atom->u.contents.option == C_SUB)
+		if (atom->u.contents.option == C_SUB_SANITIZE) {
+			struct strbuf sb = STRBUF_INIT;
+			format_sanitized_subject(&sb, subpos);
+			v->s = strbuf_detach(&sb, NULL);
+		} else if (atom->u.contents.option == C_SUB)
 			v->s = copy_subject(subpos, sublen);
 		else if (atom->u.contents.option == C_BODY_DEP)
 			v->s = xmemdupz(bodypos, bodylen);
