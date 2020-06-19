@@ -51,6 +51,9 @@ static size_t convert_format(struct strbuf *sb, const char *start, void *data)
 	case 's':
 		strbuf_addstr(sb, "%(subject)");
 		return 1;
+	case 'f':
+		strbuf_addstr(sb, "%(subject:sanitize)");
+		return 1;
 	case 'b':
 		strbuf_addstr(sb, "%(body)");
 		return 1;
