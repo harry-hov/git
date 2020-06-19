@@ -3,6 +3,7 @@
 
 #include "cache.h"
 #include "string-list.h"
+#include "gpg-interface.h"
 
 struct commit;
 struct strbuf;
@@ -51,6 +52,51 @@ struct pretty_print_context {
 	 */
 	struct string_list in_body_headers;
 	int graph_width;
+};
+
+struct chunk {
+	size_t off;
+	size_t len;
+};
+
+enum flush_type {
+	no_flush,
+	flush_right,
+	flush_left,
+	flush_left_and_steal,
+	flush_both
+};
+
+enum trunc_type {
+	trunc_none,
+	trunc_left,
+	trunc_middle,
+	trunc_right
+};
+
+struct format_commit_context {
+	const struct commit *commit;
+	const struct pretty_print_context *pretty_ctx;
+	unsigned commit_header_parsed:1;
+	unsigned commit_message_parsed:1;
+	struct signature_check signature_check;
+	enum flush_type flush_type;
+	enum trunc_type truncate;
+	const char *message;
+	char *commit_encoding;
+	size_t width, indent1, indent2;
+	int auto_color;
+	int padding;
+
+	/* These offsets are relative to the start of the commit message. */
+	struct chunk author;
+	struct chunk committer;
+	size_t message_off;
+	size_t subject_off;
+	size_t body_off;
+
+	/* The following ones are relative to the result struct strbuf. */
+	size_t wrap_start;
 };
 
 /* Check whether commit format is mail. */
@@ -141,5 +187,10 @@ int commit_format_is_empty(enum cmit_fmt);
 
 /* Returns user_format */
 const char *get_user_format(void);
+
+/* Parse color */
+size_t parse_color(struct strbuf *sb, /* in UTF-8 */
+			  const char *placeholder,
+			  struct format_commit_context *c);
 
 #endif /* PRETTY_H */
