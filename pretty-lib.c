@@ -1,16 +1,42 @@
 #include "commit.h"
 #include "ref-filter.h"
 #include "pretty-lib.h"
+#include "color.h"
+#include "pretty.h"
+#include "diff.h"
 
 static size_t convert_format(struct strbuf *sb, const char *start, void *data)
 {
+	struct format_commit_context *c = data;
+
 	/* TODO - Add support for more formatting options */
 	switch (*start) {
+	case 'C':
+		if (starts_with(start + 1, "(auto)")) {
+			c->auto_color = want_color(c->pretty_ctx->color);
+			if (c->auto_color && sb->len)
+				strbuf_addstr(sb, GIT_COLOR_RESET);
+			return 7; /* consumed 7 bytes, "C(auto)" */
+		} else {
+			int ret = parse_color(sb, start, c);
+			if (ret)
+				c->auto_color = 0;
+			/*
+			 * Otherwise, we decided to treat %C<unknown>
+			 * as a literal string, and the previous
+			 * %C(auto) is still valid.
+			 */
+			return ret;
+		}
 	case 'H':
+		strbuf_addstr(sb, diff_get_color(c->auto_color, DIFF_COMMIT));
 		strbuf_addstr(sb, "%(objectname)");
+		strbuf_addstr(sb, diff_get_color(c->auto_color, DIFF_RESET));
 		return 1;
 	case 'h':
+		strbuf_addstr(sb, diff_get_color(c->auto_color, DIFF_COMMIT));
 		strbuf_addstr(sb, "%(objectname:short)");
+		strbuf_addstr(sb, diff_get_color(c->auto_color, DIFF_RESET));
 		return 1;
 	case 'T':
 		strbuf_addstr(sb, "%(tree)");
@@ -67,11 +93,16 @@ void ref_pretty_print_commit(struct pretty_print_context *pp,
 {
 	struct ref_format format = REF_FORMAT_INIT;
 	struct strbuf sb_fmt = STRBUF_INIT;
+	struct format_commit_context fmt_ctx = {
+		.commit = commit,
+		.pretty_ctx = pp,
+		.wrap_start = sb->len
+	};
 	const char *name = "refs";
 	const char *usr_fmt = get_user_format();
 
 	if (pp->fmt == CMIT_FMT_USERFORMAT) {
-		strbuf_expand(&sb_fmt, usr_fmt, convert_format, NULL);
+		strbuf_expand(&sb_fmt, usr_fmt, convert_format, &fmt_ctx);
 		format.format = sb_fmt.buf;
 	} else if (pp->fmt == CMIT_FMT_DEFAULT || pp->fmt == CMIT_FMT_MEDIUM) {
 		format.format = "Author: %(authorname) %(authoremail)\nDate:\t%(authordate)\n\n%(subject)\n\n%(body)";
