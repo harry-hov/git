@@ -4,10 +4,12 @@
 #include "color.h"
 #include "pretty.h"
 #include "diff.h"
+#include "log-tree.h"
 
 static size_t convert_format(struct strbuf *sb, const char *start, void *data)
 {
 	struct format_commit_context *c = data;
+	const struct commit *commit = c->commit;
 
 	/* TODO - Add support for more formatting options */
 	switch (*start) {
@@ -49,6 +51,15 @@ static size_t convert_format(struct strbuf *sb, const char *start, void *data)
 		return 1;
 	case 'p':
 		strbuf_addstr(sb, "%(parent:short)");
+		return 1;
+	case 'm':		/* left/right/bottom */
+		strbuf_addstr(sb, get_revision_mark(NULL, commit));
+		return 1;
+	case 'd':
+		format_decorations(sb, commit, c->auto_color);
+		return 1;
+	case 'D':
+		format_decorations_extended(sb, commit, c->auto_color, "", ", ", "");
 		return 1;
 	case 'a':
 		if (start[1] == 'n')
