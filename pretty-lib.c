@@ -11,6 +11,80 @@ static size_t convert_format(struct strbuf *sb, const char *start, void *data)
 	struct format_commit_context *c = data;
 	const struct commit *commit = c->commit;
 
+	if (start[0] == 'G') {
+		if (!c->signature_check.result)
+			check_commit_signature(c->commit, &(c->signature_check));
+		switch (start[1]) {
+		case 'G':
+			strbuf_addstr(sb, "%(contents:signature)");
+			/*
+			if (c->signature_check.gpg_output)
+				strbuf_addstr(sb, c->signature_check.gpg_output);
+			*/
+			break;
+		case '?':
+			switch (c->signature_check.result) {
+			case 'G':
+				switch (c->signature_check.trust_level) {
+				case TRUST_UNDEFINED:
+				case TRUST_NEVER:
+					strbuf_addch(sb, 'U');
+					break;
+				default:
+					strbuf_addch(sb, 'G');
+					break;
+				}
+				break;
+			case 'B':
+			case 'E':
+			case 'N':
+			case 'X':
+			case 'Y':
+			case 'R':
+				strbuf_addch(sb, c->signature_check.result);
+			}
+			break;
+		case 'S':
+			if (c->signature_check.signer)
+				strbuf_addstr(sb, c->signature_check.signer);
+			break;
+		case 'K':
+			if (c->signature_check.key)
+				strbuf_addstr(sb, c->signature_check.key);
+			break;
+		case 'F':
+			if (c->signature_check.fingerprint)
+				strbuf_addstr(sb, c->signature_check.fingerprint);
+			break;
+		case 'P':
+			if (c->signature_check.primary_key_fingerprint)
+				strbuf_addstr(sb, c->signature_check.primary_key_fingerprint);
+			break;
+		case 'T':
+			switch (c->signature_check.trust_level) {
+			case TRUST_UNDEFINED:
+				strbuf_addstr(sb, "undefined");
+				break;
+			case TRUST_NEVER:
+				strbuf_addstr(sb, "never");
+				break;
+			case TRUST_MARGINAL:
+				strbuf_addstr(sb, "marginal");
+				break;
+			case TRUST_FULLY:
+				strbuf_addstr(sb, "fully");
+				break;
+			case TRUST_ULTIMATE:
+				strbuf_addstr(sb, "ultimate");
+				break;
+			}
+			break;
+		default:
+			die(_("invalid formatting option '%c%c'"), start[0], start[1]);
+		}
+		return 2;
+	}
+
 	/* TODO - Add support for more formatting options */
 	switch (*start) {
 	case 'C':
