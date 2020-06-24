@@ -183,7 +183,7 @@ void ref_pretty_print_commit(struct pretty_print_context *pp,
 		.pretty_ctx = pp,
 		.wrap_start = sb->len
 	};
-	const char *name = "refs";
+	const char *name = "refs/heads/";
 	const char *usr_fmt = get_user_format();
 
 	if (pp->fmt == CMIT_FMT_USERFORMAT) {
