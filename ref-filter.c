@@ -140,6 +140,9 @@ static struct used_atom {
 			enum { O_FULL, O_LENGTH, O_SHORT } option;
 			unsigned int length;
 		} objectname;
+		struct {
+			enum { S_BARE, S_GRADE, S_SIGNER, S_KEY, S_FINGERPRINT, S_PRI_KEY_FP, S_TRUST_LEVEL } option;
+		} signature;
 		struct refname_atom refname;
 		char *head;
 	} u;
@@ -307,6 +310,36 @@ static int subject_atom_parser(const struct ref_format *format, struct used_atom
 		}
 	}
 	atom->u.contents.option = C_SUB;
+	return 0;
+}
+
+static int signature_atom_parser(const struct ref_format *format, struct used_atom *atom,
+			       const char *arg, struct strbuf *err)
+{
+	if (arg) {
+		if (!strcmp(arg, "signer")) {
+			atom->u.signature.option = S_SIGNER;
+			return 0;
+		} else if (!strcmp(arg, "grade")) {
+			atom->u.signature.option = S_GRADE;
+			return 0;
+		} else if (!strcmp(arg, "key")) {
+			atom->u.signature.option = S_KEY;
+			return 0;
+		} else if (!strcmp(arg, "fingerprint")) {
+			atom->u.signature.option = S_FINGERPRINT;
+			return 0;
+		} else if (!strcmp(arg, "primarykeyfingerprint")) {
+			atom->u.signature.option = S_PRI_KEY_FP;
+			return 0;
+		} else if (!strcmp(arg, "trustlevel")) {
+			atom->u.signature.option = S_TRUST_LEVEL;
+			return 0;
+		} else {
+			return strbuf_addf_ret(err, -1, _("unknown %%(signature) argument: %s"), arg);
+		}
+	}
+	atom->u.signature.option = S_BARE;
 	return 0;
 }
 
@@ -508,6 +541,7 @@ static struct {
 	{ "body", SOURCE_OBJ, FIELD_STR, body_atom_parser },
 	{ "trailers", SOURCE_OBJ, FIELD_STR, trailers_atom_parser },
 	{ "contents", SOURCE_OBJ, FIELD_STR, contents_atom_parser },
+	{ "signature", SOURCE_OBJ, FIELD_STR, signature_atom_parser },
 	{ "upstream", SOURCE_NONE, FIELD_STR, remote_ref_atom_parser },
 	{ "push", SOURCE_NONE, FIELD_STR, remote_ref_atom_parser },
 	{ "symref", SOURCE_NONE, FIELD_STR, refname_atom_parser },
@@ -1176,6 +1210,104 @@ static void grab_person(const char *who, struct atom_value *val, int deref, void
 	}
 }
 
+static void grab_signature(struct atom_value *val, int deref, struct object *obj)
+{
+	int i;
+	struct commit *commit = (struct commit *) obj;
+
+	for (i = 0; i < used_atom_cnt; i++) {
+		struct used_atom *atom = &used_atom[i];
+		const char *name = atom->name;
+		struct atom_value *v = &val[i];
+		struct strbuf payload = STRBUF_INIT;
+		struct strbuf signature = STRBUF_INIT;
+		struct signature_check sigc = { 0 };
+		int status;
+
+		if (!!deref != (*name == '*'))
+			continue;
+		if (deref)
+			name++;
+		if (strcmp(name, "signature") &&
+			strcmp(name, "signature:signer") &&
+			strcmp(name, "signature:grade") &&
+			strcmp(name, "signature:key") &&
+			strcmp(name, "signature:fingerprint") &&
+			strcmp(name, "signature:primarykeyfingerprint") &&
+			strcmp(name, "signature:trustlevel"))
+			continue;
+
+		if (parse_signed_commit(commit, &payload, &signature) <= 0) {
+			strbuf_release(&payload);
+			strbuf_release(&signature);
+			continue;
+		}
+
+		status = check_signature(payload.buf, payload.len, signature.buf,
+					signature.len, &sigc);
+
+		if (!status) {
+			v->s = xstrdup("No signature\n");
+			continue;
+		}
+		if (!sigc.result)
+			check_commit_signature(commit, &(sigc));
+
+		if (atom->u.signature.option == S_BARE)
+			v->s = xstrdup(sigc.gpg_output);
+		else if (atom->u.signature.option == S_SIGNER)
+			v->s = xstrdup(sigc.signer);
+		else if (atom->u.signature.option == S_GRADE) {
+			switch (sigc.result) {
+			case 'G':
+				switch (sigc.trust_level) {
+				case TRUST_UNDEFINED:
+				case TRUST_NEVER:
+					v->s = xstrfmt("%c", (char)'U');
+					break;
+				default:
+					v->s = xstrfmt("%c", (char)'G');
+					break;
+				}
+				break;
+			case 'B':
+			case 'E':
+			case 'N':
+			case 'X':
+			case 'Y':
+			case 'R':
+				v->s = xstrfmt("%c", (char)sigc.result);
+			}
+		}
+		else if (atom->u.signature.option == S_KEY)
+			v->s = xstrdup(sigc.key);
+		else if (atom->u.signature.option == S_FINGERPRINT)
+			v->s = xstrdup(sigc.fingerprint);
+		else if (atom->u.signature.option == S_PRI_KEY_FP)
+			v->s = xstrdup(sigc.primary_key_fingerprint);
+		else if (atom->u.signature.option == S_TRUST_LEVEL) {
+			switch (sigc.trust_level) {
+			case TRUST_UNDEFINED:
+				v->s = xstrdup("undefined");
+				break;
+			case TRUST_NEVER:
+				v->s = xstrdup("never");
+				break;
+			case TRUST_MARGINAL:
+				v->s = xstrdup("marginal");
+				break;
+			case TRUST_FULLY:
+				v->s = xstrdup("fully");
+				break;
+			case TRUST_ULTIMATE:
+				v->s = xstrdup("ultimate");
+				break;
+			}
+		}
+	}
+
+}
+
 static void find_subpos(const char *buf,
 			const char **sub, unsigned long *sublen,
 			const char **body, unsigned long *bodylen,
@@ -1337,6 +1469,7 @@ static void grab_values(struct atom_value *val, int deref, struct object *obj, v
 		grab_sub_body_contents(val, deref, buf);
 		grab_person("author", val, deref, buf);
 		grab_person("committer", val, deref, buf);
+		grab_signature(val, deref, obj);
 		break;
 	case OBJ_TREE:
 		/* grab_tree_values(val, deref, obj, buf, sz); */
