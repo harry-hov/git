@@ -51,7 +51,9 @@ static size_t convert_format(struct strbuf *sb, const char *start, void *data)
 		if (start[1] == 'n')
 			strbuf_addstr(sb, "%(authorname)");
 		else if (start[1] == 'e')
-			strbuf_addstr(sb, "%(authoremail)");
+			strbuf_addstr(sb, "%(authoremail:trim)");
+		else if (start[1] == 'l')
+			strbuf_addstr(sb, "%(authoremail:localpart)");
 		else if (start[1] == 'd')
 			strbuf_addstr(sb, "%(authordate)");
 		else
@@ -61,7 +63,9 @@ static size_t convert_format(struct strbuf *sb, const char *start, void *data)
 		if (start[1] == 'n')
 			strbuf_addstr(sb, "%(committername)");
 		else if (start[1] == 'e')
-			strbuf_addstr(sb, "%(committeremail)");
+			strbuf_addstr(sb, "%(committeremail:trim)");
+		else if (start[1] == 'l')
+			strbuf_addstr(sb, "%(committeremail:localpart)");
 		else if (start[1] == 'd')
 			strbuf_addstr(sb, "%(committerdate)");
 		else
