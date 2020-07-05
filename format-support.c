@@ -36,3 +36,24 @@ void format_sanitized_subject(struct strbuf *sb, const char *msg)
 		trimlen++;
 	strbuf_remove(sb, sb->len - trimlen, trimlen);
 }
+
+size_t format_commit_color(struct strbuf *sb, const char *start,
+					struct format_commit_context *c)
+{
+	if (starts_with(start + 1, "(auto)")) {
+		c->auto_color = want_color(c->pretty_ctx->color);
+		if (c->auto_color && sb->len)
+			strbuf_addstr(sb, GIT_COLOR_RESET);
+		return 7; /* consumed 7 bytes, "C(auto)" */
+	} else {
+		int ret = pretty_parse_color(sb, start, c);
+		if (ret)
+			c->auto_color = 0;
+		/*
+		* Otherwise, we decided to treat %C<unknown>
+		* as a literal string, and the previous
+		* %C(auto) is still valid.
+		*/
+		return ret;
+	}
+}
