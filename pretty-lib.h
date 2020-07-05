@@ -1,6 +1,8 @@
 #ifndef PRETTY_LIB_H
 #define PRETTY_LIB_H
 
+#include "pretty.h"
+
 /**
  * This is a possibly temporary interface between
  * ref-filter and pretty. This interface may disappear in the
