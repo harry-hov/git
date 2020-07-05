@@ -53,4 +53,7 @@ size_t pretty_parse_color(struct strbuf *sb, /* in UTF-8 */
 			  const char *placeholder,
 			  struct format_commit_context *c);
 
+size_t format_commit_color(struct strbuf *sb, const char *start,
+			   struct format_commit_context *c);
+
 #endif /* FORMAT_SUPPORT_H */
