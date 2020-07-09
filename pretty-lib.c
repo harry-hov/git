@@ -54,6 +54,18 @@ static size_t convert_format(struct strbuf *sb, const char *start, void *data)
 			strbuf_addstr(sb, "%(authoremail:localpart)");
 		else if (start[1] == 'd')
 			strbuf_addstr(sb, "%(authordate)");
+		else if (start[1] == 'D')
+			strbuf_addstr(sb, "%(authordate:rfc)");
+		else if (start[1] == 'r')
+			strbuf_addstr(sb, "%(authordate:relative)");
+		else if (start[1] == 't')
+			strbuf_addstr(sb, "%(authordate:unix)");
+		else if (start[1] == 'i')
+			strbuf_addstr(sb, "%(authordate:iso)");
+		else if (start[1] == 'I')
+			strbuf_addstr(sb, "%(authordate:iso-strict)");
+		else if (start[1] == 's')
+			strbuf_addstr(sb, "%(authordate:short)");
 		else
 			die(_("invalid formatting option '%c%c'"), start[0], start[1]);
 		return 2;
@@ -66,6 +78,18 @@ static size_t convert_format(struct strbuf *sb, const char *start, void *data)
 			strbuf_addstr(sb, "%(committeremail:localpart)");
 		else if (start[1] == 'd')
 			strbuf_addstr(sb, "%(committerdate)");
+		else if (start[1] == 'D')
+			strbuf_addstr(sb, "%(committerdate:rfc)");
+		else if (start[1] == 'r')
+			strbuf_addstr(sb, "%(committerdate:relative)");
+		else if (start[1] == 't')
+			strbuf_addstr(sb, "%(committerdate:unix)");
+		else if (start[1] == 'i')
+			strbuf_addstr(sb, "%(committerdate:iso)");
+		else if (start[1] == 'I')
+			strbuf_addstr(sb, "%(committerdate:iso-strict)");
+		else if (start[1] == 's')
+			strbuf_addstr(sb, "%(committerdate:short)");
 		else
 			die(_("invalid formatting option '%c%c'"), start[0], start[1]);
 		return 2;
