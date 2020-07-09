@@ -103,6 +103,9 @@ static size_t convert_format(struct strbuf *sb, const char *start, void *data)
 	case 'b':
 		strbuf_addstr(sb, "%(body)");
 		return 1;
+	case 'B':
+		strbuf_addstr(sb, "%(subject)\n\n%(body)");
+		return 1;
 	case 'n':
 		strbuf_addstr(sb, "\n");
 		return 1;
