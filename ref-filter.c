@@ -103,6 +103,10 @@ static struct ref_to_worktree_map {
 	struct worktree **worktrees;
 } ref_to_worktree_map;
 
+
+struct string_list temp_filter_list;
+struct strbuf temp_sepbuf;
+
 static struct email_option{
 	enum { EO_INVALID, EO_RAW, EO_TRIM, EO_LOCALPART } option;
 } email_option;
@@ -134,6 +138,8 @@ static struct used_atom {
 		struct {
 			enum { C_BARE, C_BODY, C_BODY_DEP, C_LINES, C_SIG, C_SUB, C_SUB_SANITIZE, C_TRAILERS } option;
 			struct process_trailer_options trailer_opts;
+			//struct string_list filter_list;
+			//struct strbuf sepbuf;
 			unsigned int nlines;
 		} contents;
 		struct {
@@ -317,28 +323,20 @@ static int subject_atom_parser(const struct ref_format *format, struct used_atom
 static int trailers_atom_parser(const struct ref_format *format, struct used_atom *atom,
 				const char *arg, struct strbuf *err)
 {
-	struct string_list params = STRING_LIST_INIT_DUP;
-	int i;
+	struct strbuf sb = STRBUF_INIT;
+	const char *argbuf;
 
 	atom->u.contents.trailer_opts.no_divider = 1;
 
 	if (arg) {
-		string_list_split(&params, arg, ',', -1);
-		for (i = 0; i < params.nr; i++) {
-			const char *s = params.items[i].string;
-			if (!strcmp(s, "unfold"))
-				atom->u.contents.trailer_opts.unfold = 1;
-			else if (!strcmp(s, "only"))
-				atom->u.contents.trailer_opts.only_trailers = 1;
-			else {
-				strbuf_addf(err, _("unknown %%(trailers) argument: %s"), s);
-				string_list_clear(&params, 0);
-				return -1;
-			}
-		}
+		strbuf_addstr(&sb, arg);
+		strbuf_addstr(&sb, ")");
+		argbuf = strbuf_detach(&sb, NULL);
+		format_set_trailers_options(&atom->u.contents.trailer_opts, &temp_filter_list,
+								&temp_sepbuf, argbuf);
 	}
 	atom->u.contents.option = C_TRAILERS;
-	string_list_clear(&params, 0);
+	strbuf_release(&sb);
 	return 0;
 }
 
