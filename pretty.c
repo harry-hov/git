@@ -1349,7 +1349,6 @@ static size_t format_commit_one(struct strbuf *sb, /* in UTF-8 */
 				} else if (match_placeholder_arg_value(arg, "separator", &arg, &argval, &arglen)) {
 					char *fmt;
 
-					strbuf_reset(&sepbuf);
 					fmt = xstrndup(argval, arglen);
 					strbuf_expand(&sepbuf, fmt, strbuf_expand_literal_cb, NULL);
 					free(fmt);
