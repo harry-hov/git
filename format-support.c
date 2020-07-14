@@ -116,8 +116,19 @@ const char *format_set_trailers_options(struct process_trailer_options *t_opts,
 					const char *arg)
 {
 	for (;;) {
-		const char *argval;
-		size_t arglen;
+		const char *argval, *valstart;
+		size_t arglen, vallen;
+
+		if (*arg != ')') {
+			vallen = strcspn(arg, "=,)");
+			valstart = xstrndup(arg, vallen);
+			if (strcmp(valstart, "key") &&
+				strcmp(valstart, "separator") &&
+				strcmp(valstart, "only") &&
+				strcmp(valstart, "valueonly") &&
+				strcmp(valstart, "unfold"))
+				die("unknown %%(trailers) argument: %s", valstart);
+		}
 
 		if (match_placeholder_arg_value(arg, "key", &arg, &argval, &arglen)) {
 			uintptr_t len = arglen;
