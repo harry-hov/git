@@ -1056,35 +1056,6 @@ static int match_placeholder_bool_arg(const char *to_parse, const char *candidat
 	return 1;
 }
 
-int pretty_print_reflog(struct format_commit_context *c,
-					struct strbuf *sb, const char *placeholder)
-{
-	switch(placeholder[1]) {
-	case 'd':	/* reflog selector */
-	case 'D':
-		if (c->pretty_ctx->reflog_info)
-			get_reflog_selector(sb,
-						c->pretty_ctx->reflog_info,
-						&c->pretty_ctx->date_mode,
-						c->pretty_ctx->date_mode_explicit,
-						(placeholder[1] == 'd'));
-		return 2;
-	case 's':	/* reflog message */
-		if (c->pretty_ctx->reflog_info)
-			get_reflog_message(sb, c->pretty_ctx->reflog_info);
-		return 2;
-	case 'n':
-	case 'N':
-	case 'e':
-	case 'E':
-		return pretty_format_reflog_person(sb,
-						placeholder[1],
-						c->pretty_ctx->reflog_info,
-						&c->pretty_ctx->date_mode);
-	}
-	return 0;
-}
-
 static int format_trailer_match_cb(const struct strbuf *key, void *ud)
 {
 	const struct string_list *list = ud;

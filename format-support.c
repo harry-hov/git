@@ -2,6 +2,7 @@
 #include "log-tree.h"
 #include "color.h"
 #include "format-support.h"
+#include "reflog-walk.h"
 
 static int istitlechar(char c)
 {
@@ -56,4 +57,33 @@ size_t format_commit_color(struct strbuf *sb, const char *start,
 		*/
 		return ret;
 	}
+}
+
+int pretty_print_reflog(struct format_commit_context *c,
+					struct strbuf *sb, const char *placeholder)
+{
+	switch(placeholder[1]) {
+	case 'd':	/* reflog selector */
+	case 'D':
+		if (c->pretty_ctx->reflog_info)
+			get_reflog_selector(sb,
+						c->pretty_ctx->reflog_info,
+						&c->pretty_ctx->date_mode,
+						c->pretty_ctx->date_mode_explicit,
+						(placeholder[1] == 'd'));
+		return 2;
+	case 's':	/* reflog message */
+		if (c->pretty_ctx->reflog_info)
+			get_reflog_message(sb, c->pretty_ctx->reflog_info);
+		return 2;
+	case 'n':
+	case 'N':
+	case 'e':
+	case 'E':
+		return pretty_format_reflog_person(sb,
+						placeholder[1],
+						c->pretty_ctx->reflog_info,
+						&c->pretty_ctx->date_mode);
+	}
+	return 0;
 }
