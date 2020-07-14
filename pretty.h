@@ -193,4 +193,12 @@ size_t pretty_parse_color(struct strbuf *sb, /* in UTF-8 */
 			  const char *placeholder,
 			  struct format_commit_context *c);
 
+int pretty_format_reflog_person(struct strbuf *sb,
+				char part,
+				struct reflog_walk_info *log,
+				const struct date_mode *dmode);
+
+int pretty_print_reflog(struct format_commit_context *c,
+				struct strbuf *sb, const char *placeholder);
+
 #endif /* PRETTY_H */
