@@ -15,6 +15,39 @@ static size_t convert_format(struct strbuf *sb, const char *start, void *data)
 	case 'T':
 		strbuf_addstr(sb, "%(tree)");
 		return 1;
+	case 'P':
+		strbuf_addstr(sb, "%(parent)");
+		return 1;
+	case 'a':
+		if (start[1] == 'n')
+			strbuf_addstr(sb, "%(authorname)");
+		else if (start[1] == 'e')
+			strbuf_addstr(sb, "%(authoremail:trim)");
+		else if (start[1] == 'l')
+			strbuf_addstr(sb, "%(authoremail:localpart)");
+		else if (start[1] == 'd')
+			strbuf_addstr(sb, "%(authordate)");
+		else
+			die(_("invalid formatting option '%c%c'"), start[0], start[1]);
+		return 2;
+	case 'c':
+		if (start[1] == 'n')
+			strbuf_addstr(sb, "%(committername)");
+		else if (start[1] == 'e')
+			strbuf_addstr(sb, "%(committeremail:trim)");
+		else if (start[1] == 'l')
+			strbuf_addstr(sb, "%(committeremail:localpart)");
+		else if (start[1] == 'd')
+			strbuf_addstr(sb, "%(committerdate)");
+		else
+			die(_("invalid formatting option '%c%c'"), start[0], start[1]);
+		return 2;
+	case 's':
+		strbuf_addstr(sb, "%(subject)");
+		return 1;
+	case 'b':
+		strbuf_addstr(sb, "%(body)");
+		return 1;
 	default:
 		die(_("invalid formatting option '%c'"), *start);
 	}
