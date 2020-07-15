@@ -9,6 +9,17 @@
 static size_t convert_format(struct strbuf *sb, const char *start, void *data)
 {
 	struct format_commit_context *c = data;
+	size_t res;
+
+	/*
+	 * These are independent of the commit.
+	 *
+	 * For options like %n, %x00, %x2C... that expnads to
+	 * string literals.
+	 */
+	res = strbuf_expand_literal_cb(sb, start, NULL);
+	if (res)
+		return res;
 
 	/* TODO - Add support for more formatting options */
 	switch (*start) {
