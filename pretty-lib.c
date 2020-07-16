@@ -117,6 +117,12 @@ static size_t convert_format(struct strbuf *sb, const char *start, void *data)
 		return 1;
 	case 'g':		/* reflog info */
 		return pretty_print_reflog(c, sb, start);
+	case 'N':
+		if (c->pretty_ctx->notes_message) {
+			strbuf_addstr(sb, c->pretty_ctx->notes_message);
+			return 1;
+		}
+		return 0;
 	default:
 		die(_("invalid formatting option '%c'"), *start);
 	}
