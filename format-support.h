@@ -74,4 +74,7 @@ void rewrap_message_tail(struct strbuf *sb,
 			 size_t new_width, size_t new_indent1,
 			 size_t new_indent2);
 
+int pretty_mailmap_name(const char **email, size_t *email_len,
+		 	const char **name, size_t *name_len);
+
 #endif /* FORMAT_SUPPORT_H */

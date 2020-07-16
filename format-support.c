@@ -113,7 +113,7 @@ size_t format_commit_color(struct strbuf *sb, const char *start,
 	}
 }
 
-static int mailmap_name(const char **email, size_t *email_len,
+int pretty_mailmap_name(const char **email, size_t *email_len,
 			const char **name, size_t *name_len)
 {
 	static struct string_list *mail_map;
@@ -143,7 +143,7 @@ size_t format_person_part(struct strbuf *sb, char part,
 	maillen = s.mail_end - s.mail_begin;
 
 	if (part == 'N' || part == 'E' || part == 'L') /* mailmap lookup */
-		mailmap_name(&mail, &maillen, &name, &namelen);
+		pretty_mailmap_name(&mail, &maillen, &name, &namelen);
 	if (part == 'n' || part == 'N') {	/* name */
 		strbuf_add(sb, name, namelen);
 		return placeholder_len;
