@@ -4,6 +4,7 @@
 #include "format-support.h"
 #include "reflog-walk.h"
 #include "mailmap.h"
+#include "utf8.h"
 
 static int istitlechar(char c)
 {
@@ -316,4 +317,61 @@ size_t parse_padding_placeholder(const char *placeholder,
 		return end - placeholder + 1;
 	}
 	return 0;
+}
+
+static void strbuf_wrap(struct strbuf *sb, size_t pos,
+			size_t width, size_t indent1, size_t indent2)
+{
+	struct strbuf tmp = STRBUF_INIT;
+
+	if (pos)
+		strbuf_add(&tmp, sb->buf, pos);
+	strbuf_add_wrapped_text(&tmp, sb->buf + pos,
+				(int) indent1, (int) indent2, (int) width);
+	strbuf_swap(&tmp, sb);
+	strbuf_release(&tmp);
+}
+
+void rewrap_message_tail(struct strbuf *sb,
+			 struct format_commit_context *c,
+			 size_t new_width, size_t new_indent1,
+			 size_t new_indent2)
+{
+	if (c->width == new_width && c->indent1 == new_indent1 &&
+	    c->indent2 == new_indent2)
+		return;
+	if (c->wrap_start < sb->len)
+		strbuf_wrap(sb, c->wrap_start, c->width, c->indent1, c->indent2);
+	c->wrap_start = sb->len;
+	c->width = new_width;
+	c->indent1 = new_indent1;
+	c->indent2 = new_indent2;
+}
+
+int pretty_switch_line_wrapping(struct strbuf *sb, const char *placeholder,
+				struct format_commit_context *c)
+{
+	if (placeholder[1] == '(') {
+		unsigned long width = 0, indent1 = 0, indent2 = 0;
+		char *next;
+		const char *start = placeholder + 2;
+		const char *end = strchr(start, ')');
+		if (!end)
+			return 0;
+		if (end > start) {
+			width = strtoul(start, &next, 10);
+			if (*next == ',') {
+				indent1 = strtoul(next + 1, &next, 10);
+				if (*next == ',') {
+					indent2 = strtoul(next + 1,
+								&next, 10);
+				}
+			}
+			if (*next != ')')
+				return 0;
+		}
+		rewrap_message_tail(sb, c, width, indent1, indent2);
+		return end - placeholder + 1;
+	} else
+		return 0;
 }
