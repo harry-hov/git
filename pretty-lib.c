@@ -173,6 +173,9 @@ void ref_pretty_print_commit(struct pretty_print_context *pp,
 
 	format.need_newline_at_eol = 0;
 
+	if (pp->mailmap)
+		format.respect_mailmap = 1;
+
 	verify_ref_format(&format);
 	pretty_print_ref(name, &commit->object.oid, &format);
 	strbuf_release(&sb_fmt);

@@ -82,12 +82,13 @@ struct ref_format {
 	int use_color;
 
 	int need_newline_at_eol;
+	int respect_mailmap;
 
 	/* Internal state to ref-filter */
 	int need_color_reset_at_eol;
 };
 
-#define REF_FORMAT_INIT { NULL, 0, -1, 1 }
+#define REF_FORMAT_INIT { NULL, 0, -1, 1, 0 }
 
 /*  Macros for checking --merged and --no-merged options */
 #define _OPT_MERGED_NO_MERGED(option, filter, h) \
