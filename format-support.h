@@ -66,4 +66,12 @@ int pretty_print_reflog(struct format_commit_context *c,
 size_t parse_padding_placeholder(const char *placeholder,
 				 struct format_commit_context *c);
 
+int pretty_switch_line_wrapping(struct strbuf *sb, const char *placeholder,
+				struct format_commit_context *c);
+
+void rewrap_message_tail(struct strbuf *sb,
+			 struct format_commit_context *c,
+			 size_t new_width, size_t new_indent1,
+			 size_t new_indent2);
+
 #endif /* FORMAT_SUPPORT_H */
