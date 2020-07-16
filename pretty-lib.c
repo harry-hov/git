@@ -123,6 +123,10 @@ static size_t convert_format(struct strbuf *sb, const char *start, void *data)
 			return 1;
 		}
 		return 0;
+	case 'e':	/* encoding */
+		if (c->commit_encoding)
+			strbuf_addstr(sb, c->commit_encoding);
+		return 1;
 	}
 
 	return 0;	/* unknown placeholder */
