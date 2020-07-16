@@ -63,4 +63,7 @@ size_t format_person_part(struct strbuf *sb, char part,
 int pretty_print_reflog(struct format_commit_context *c,
 			struct strbuf *sb, const char *placeholder);
 
+size_t parse_padding_placeholder(const char *placeholder,
+				 struct format_commit_context *c);
+
 #endif /* FORMAT_SUPPORT_H */
