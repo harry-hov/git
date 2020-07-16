@@ -9,6 +9,7 @@ static size_t convert_format(struct strbuf *sb, const char *start, void *data)
 {
 	struct format_commit_context *c = data;
 	size_t res;
+	char **slot;
 
 	/*
 	 * These are independent of the commit.
@@ -126,6 +127,14 @@ static size_t convert_format(struct strbuf *sb, const char *start, void *data)
 	case 'e':	/* encoding */
 		if (c->commit_encoding)
 			strbuf_addstr(sb, c->commit_encoding);
+		return 1;
+	case 'S':		/* tag/branch like --source */
+		if (!(c->pretty_ctx->rev && c->pretty_ctx->rev->sources))
+			return 0;
+		slot = revision_sources_at(c->pretty_ctx->rev->sources, c->commit);
+		if (!(slot && *slot))
+			return 0;
+		strbuf_addstr(sb, *slot);
 		return 1;
 	}
 
