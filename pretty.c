@@ -840,6 +840,34 @@ static int format_trailer_match_cb(const struct strbuf *key, void *ud)
 	return 0;
 }
 
+static int pretty_switch_line_wrapping(struct strbuf *sb, const char *placeholder,
+				       struct format_commit_context *c)
+{
+	if (placeholder[1] == '(') {
+		unsigned long width = 0, indent1 = 0, indent2 = 0;
+		char *next;
+		const char *start = placeholder + 2;
+		const char *end = strchr(start, ')');
+		if (!end)
+			return 0;
+		if (end > start) {
+			width = strtoul(start, &next, 10);
+			if (*next == ',') {
+				indent1 = strtoul(next + 1, &next, 10);
+				if (*next == ',') {
+					indent2 = strtoul(next + 1,
+								&next, 10);
+				}
+			}
+			if (*next != ')')
+				return 0;
+		}
+		rewrap_message_tail(sb, c, width, indent1, indent2);
+		return end - placeholder + 1;
+	} else
+		return 0;
+}
+
 static size_t format_commit_one(struct strbuf *sb, /* in UTF-8 */
 				const char *placeholder,
 				void *context)
@@ -861,30 +889,7 @@ static size_t format_commit_one(struct strbuf *sb, /* in UTF-8 */
 	case 'C':
 		return format_commit_color(sb, placeholder, c);
 	case 'w':
-		if (placeholder[1] == '(') {
-			unsigned long width = 0, indent1 = 0, indent2 = 0;
-			char *next;
-			const char *start = placeholder + 2;
-			const char *end = strchr(start, ')');
-			if (!end)
-				return 0;
-			if (end > start) {
-				width = strtoul(start, &next, 10);
-				if (*next == ',') {
-					indent1 = strtoul(next + 1, &next, 10);
-					if (*next == ',') {
-						indent2 = strtoul(next + 1,
-								 &next, 10);
-					}
-				}
-				if (*next != ')')
-					return 0;
-			}
-			rewrap_message_tail(sb, c, width, indent1, indent2);
-			return end - placeholder + 1;
-		} else
-			return 0;
-
+		return pretty_switch_line_wrapping(sb, placeholder, c);
 	case '<':
 	case '>':
 		return parse_padding_placeholder(placeholder, c);
