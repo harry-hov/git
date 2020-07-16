@@ -56,4 +56,11 @@ size_t pretty_parse_color(struct strbuf *sb, /* in UTF-8 */
 size_t format_commit_color(struct strbuf *sb, const char *start,
 			   struct format_commit_context *c);
 
+size_t format_person_part(struct strbuf *sb, char part,
+			  const char *msg, int len,
+			  const struct date_mode *dmode);
+
+int pretty_print_reflog(struct format_commit_context *c,
+			struct strbuf *sb, const char *placeholder);
+
 #endif /* FORMAT_SUPPORT_H */
