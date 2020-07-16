@@ -105,6 +105,8 @@ static size_t convert_format(struct strbuf *sb, const char *start, void *data)
 	case 'B':
 		strbuf_addstr(sb, "%(subject)\n\n%(body)");
 		return 1;
+	case 'g':		/* reflog info */
+		return pretty_print_reflog(c, sb, start);
 	default:
 		die(_("invalid formatting option '%c'"), *start);
 	}
