@@ -3,6 +3,7 @@
 
 #include "cache.h"
 #include "string-list.h"
+#include "gpg-interface.h"
 
 struct commit;
 struct strbuf;
