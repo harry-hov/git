@@ -324,11 +324,29 @@ static int trailers_atom_parser(const struct ref_format *format, struct used_ato
 {
 	struct strbuf sb = STRBUF_INIT;
 	const char *argbuf;
+	struct string_list params = STRING_LIST_INIT_DUP;
+	int i;
 
 	atom->u.contents.trailer_opts.no_divider = 1;
 
 	if (!arg)
 		return 0;
+
+	string_list_split(&params, arg, ',', -1);
+	for (i = 0; i < params.nr; i++) {
+		const char *s = params.items[i].string;
+		if (!strcmp(s, "key") &&
+			!strcmp(s, "separator") &&
+			!strcmp(s, "only") &&
+			!strcmp(s, "valueonly") &&
+			!strcmp(s, "unfold"))
+			continue;
+		else {
+			strbuf_addf(err, _("unknown %%(trailers) argument: %s"), s);
+			string_list_clear(&params, 0);
+			return -1;
+		}
+	}
 
 	strbuf_addstr(&sb, arg);
 	strbuf_addstr(&sb, ")");
