@@ -327,14 +327,16 @@ static int trailers_atom_parser(const struct ref_format *format, struct used_ato
 
 	atom->u.contents.trailer_opts.no_divider = 1;
 
-	if (arg) {
-		strbuf_addstr(&sb, arg);
-		strbuf_addstr(&sb, ")");
-		argbuf = strbuf_detach(&sb, NULL);
-		format_set_trailers_options(&atom->u.contents.trailer_opts,
-					&ref_trailer_buf.filter_list,
-					&ref_trailer_buf.sepbuf, argbuf);
-	}
+	if (!arg)
+		return 0;
+
+	strbuf_addstr(&sb, arg);
+	strbuf_addstr(&sb, ")");
+	argbuf = strbuf_detach(&sb, NULL);
+	format_set_trailers_options(&atom->u.contents.trailer_opts,
+				&ref_trailer_buf.filter_list,
+				&ref_trailer_buf.sepbuf, argbuf);
+
 	atom->u.contents.option = C_TRAILERS;
 	return 0;
 }
