@@ -58,11 +58,13 @@ static size_t convert_format(struct strbuf *sb, const char *start, void *data)
 		format_decorations_extended(sb, c->commit, c->auto_color, "", ", ", "");
 		return 1;
 	case 'a':
-		if (start[1] == 'n')
+		if (start[1] == 'N' || start[1] == 'E' || start[1] == 'L') /* mailmap lookup */
+			c->respect_mailmap = 1;
+		if (start[1] == 'n' || start[1] == 'N')
 			strbuf_addstr(sb, "%(authorname)");
-		else if (start[1] == 'e')
+		else if (start[1] == 'e' || start[1] == 'E')
 			strbuf_addstr(sb, "%(authoremail:trim)");
-		else if (start[1] == 'l')
+		else if (start[1] == 'l' || start[1] == 'L')
 			strbuf_addstr(sb, "%(authoremail:localpart)");
 		else if (start[1] == 'd')
 			strbuf_addstr(sb, "%(authordate)");
@@ -82,11 +84,13 @@ static size_t convert_format(struct strbuf *sb, const char *start, void *data)
 			die(_("invalid formatting option '%c%c'"), start[0], start[1]);
 		return 2;
 	case 'c':
-		if (start[1] == 'n')
+		if (start[1] == 'N' || start[1] == 'E' || start[1] == 'L') /* mailmap lookup */
+			c->respect_mailmap = 1;
+		if (start[1] == 'n' || start[1] == 'N')
 			strbuf_addstr(sb, "%(committername)");
-		else if (start[1] == 'e')
+		else if (start[1] == 'e' || start[1] == 'E')
 			strbuf_addstr(sb, "%(committeremail:trim)");
-		else if (start[1] == 'l')
+		else if (start[1] == 'l' || start[1] == 'L')
 			strbuf_addstr(sb, "%(committeremail:localpart)");
 		else if (start[1] == 'd')
 			strbuf_addstr(sb, "%(committerdate)");
@@ -173,7 +177,7 @@ void ref_pretty_print_commit(struct pretty_print_context *pp,
 
 	format.need_newline_at_eol = 0;
 
-	if (pp->mailmap)
+	if (pp->mailmap || fmt_ctx.respect_mailmap == 1)
 		format.respect_mailmap = 1;
 
 	verify_ref_format(&format);

@@ -26,6 +26,7 @@ struct format_commit_context {
 	const struct pretty_print_context *pretty_ctx;
 	unsigned commit_header_parsed:1;
 	unsigned commit_message_parsed:1;
+	unsigned respect_mailmap:1;
 	struct signature_check signature_check;
 	enum pp_flush_type flush_type;
 	enum pp_trunc_type truncate;
