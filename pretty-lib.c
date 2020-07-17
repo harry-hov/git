@@ -11,6 +11,18 @@ static size_t convert_format(struct strbuf *sb, const char *start, void *data)
 {
 	struct format_commit_context *c = data;
 
+	if (starts_with(start, "(trailers")) {
+		size_t len;
+		const char *arg;
+
+		len = strcspn(start, ")");
+		arg = xstrndup(start, len + 1);
+		strbuf_addstr(sb, "%");
+		strbuf_addstr(sb, arg);
+		free((char *)arg);
+		return len + 1;
+	}
+
 	/* TODO - Add support for more formatting options */
 	switch (*start) {
 	case 'C':
