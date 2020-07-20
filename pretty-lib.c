@@ -5,6 +5,7 @@
 #include "diff.h"
 #include "log-tree.h"
 #include "format-support.h"
+#include "graph.h"
 
 static size_t convert_format(struct strbuf *sb, const char *start, void *data)
 {
@@ -179,6 +180,8 @@ void ref_pretty_print_commit(struct pretty_print_context *pp,
 
 	if (pp->rev->graph)
 		format.graph = pp->rev->graph;
+	if (pp->rev->show_log_size)
+		format.show_buf_size = 1;
 	if (pp->mailmap || fmt_ctx.respect_mailmap == 1)
 		format.respect_mailmap = 1;
 
