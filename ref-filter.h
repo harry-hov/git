@@ -73,8 +73,9 @@ struct ref_format {
 	 * verify_ref_format() afterwards to finalize.
 	 */
 	const char *format;
-	int quote_style;
-	int use_color;
+	int quote_style,
+		use_color,
+		indent;
 
 	unsigned int need_newline_at_eol : 1,
 		show_buf_size : 1,
@@ -83,7 +84,7 @@ struct ref_format {
 	struct git_graph *graph;
 };
 
-#define REF_FORMAT_INIT { NULL, 0, -1, 1 }
+#define REF_FORMAT_INIT { NULL, 0, -1, 0, 1 }
 
 /*  Macros for checking --merged and --no-merged options */
 #define _OPT_MERGED_NO_MERGED(option, filter, h) \
