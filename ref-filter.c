@@ -154,6 +154,7 @@ static struct used_atom {
 	} u;
 } *used_atom;
 static int used_atom_cnt, need_tagged, need_symref;
+static int indent_val = 0;
 
 /*
  * Expand string, append it to strbuf *sb, then return error code ret.
@@ -1282,6 +1283,43 @@ static void append_lines(struct strbuf *out, const char *buf, unsigned long size
 	}
 }
 
+static void add_indentation(const char *line, int linelen,
+			    struct strbuf *sb, int indent)
+{
+	if (indent)
+		strbuf_addchars(sb, ' ', indent);
+	strbuf_add(sb, line, linelen);
+}
+
+static void indent_copy_msg(const char **msg, int msglen,
+			    struct strbuf *sb, int indent)
+{
+	int first = 1;
+	int total_len = 0;
+	for (;;) {
+		const char *line = *msg;
+		int linelen = get_one_line(line);
+		*msg += linelen;
+		total_len += linelen;
+
+		if (!linelen)
+			break;
+
+		if (is_blank_line(line, &linelen)) {
+			if (first)
+				continue;
+		}
+		first = 0;
+		strbuf_grow(sb, linelen + indent + 20);
+		add_indentation(line, linelen, sb, indent);
+		strbuf_addch(sb, '\n');
+
+		if (total_len > msglen)
+			break;
+	}
+	strbuf_addchars(sb, ' ', indent);
+}
+
 /* See grab_values */
 static void grab_sub_body_contents(struct atom_value *val, int deref, void *buf)
 {
@@ -1314,13 +1352,23 @@ static void grab_sub_body_contents(struct atom_value *val, int deref, void *buf)
 			struct strbuf sb = STRBUF_INIT;
 			format_sanitized_subject(&sb, subpos);
 			v->s = strbuf_detach(&sb, NULL);
-		} else if (atom->u.contents.option == C_SUB)
-			v->s = copy_subject(subpos, sublen);
-		else if (atom->u.contents.option == C_BODY_DEP)
+		} else if (atom->u.contents.option == C_SUB) {
+			if (indent_val) {
+				struct strbuf sb = STRBUF_INIT;
+				indent_copy_msg(&subpos, sublen, &sb, indent_val);
+				v->s = strbuf_detach(&sb, NULL);
+			} else
+				v->s = copy_subject(subpos, sublen);
+		} else if (atom->u.contents.option == C_BODY_DEP)
 			v->s = xmemdupz(bodypos, bodylen);
-		else if (atom->u.contents.option == C_BODY)
-			v->s = xmemdupz(bodypos, nonsiglen);
-		else if (atom->u.contents.option == C_SIG)
+		else if (atom->u.contents.option == C_BODY) {
+			if (indent_val) {
+				struct strbuf sb = STRBUF_INIT;
+				indent_copy_msg(&bodypos, nonsiglen, &sb, indent_val);
+				v->s = strbuf_detach(&sb, NULL);
+			} else
+				v->s = xmemdupz(bodypos, nonsiglen);
+		} else if (atom->u.contents.option == C_SIG)
 			v->s = xmemdupz(sigpos, siglen);
 		else if (atom->u.contents.option == C_LINES) {
 			struct strbuf s = STRBUF_INIT;
@@ -2474,6 +2522,8 @@ void show_ref_array_item(struct ref_array_item *info,
 		mailmap_option.option = MM_TRUE;
 	else
 		mailmap_option.option = MM_FALSE;
+	if (format->indent)
+		indent_val = format->indent;
 
 	if (format_ref_array_item(info, format, &final_buf, &error_buf))
 		die("%s", error_buf.buf);

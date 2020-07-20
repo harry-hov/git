@@ -160,6 +160,7 @@ void ref_pretty_print_commit(struct pretty_print_context *pp,
 	};
 	const char *name = "refs";
 	const char *usr_fmt = get_user_format();
+	int indent = 4;
 
 	if (pp->fmt == CMIT_FMT_USERFORMAT) {
 		strbuf_expand(&sb_fmt, usr_fmt, convert_format, &fmt_ctx);
@@ -168,6 +169,7 @@ void ref_pretty_print_commit(struct pretty_print_context *pp,
 		format.format = "Author: %(authorname) %(authoremail)\nDate:   %(authordate)\n\n%(subject)\n%(contents:body)";
 	} else if (pp->fmt == CMIT_FMT_ONELINE) {
 		format.format = "%(subject)";
+		indent = 0;
 	} else if (pp->fmt == CMIT_FMT_SHORT) {
 		format.format = "Author: %(authorname) %(authoremail)\n\n%(subject)";
 	} else if (pp->fmt == CMIT_FMT_FULL) {
@@ -184,6 +186,8 @@ void ref_pretty_print_commit(struct pretty_print_context *pp,
 		format.show_buf_size = 1;
 	if (pp->mailmap || fmt_ctx.respect_mailmap == 1)
 		format.respect_mailmap = 1;
+	if (indent)
+		format.indent = indent;
 
 	verify_ref_format(&format);
 	pretty_print_ref(name, &commit->object.oid, &format);

@@ -87,7 +87,8 @@ struct ref_format {
 		show_buf_size : 1;
 
 	/* Internal state to ref-filter */
-	int need_color_reset_at_eol;
+	int need_color_reset_at_eol,
+		indent;
 };
 
 #define REF_FORMAT_INIT { NULL, 0, -1, 1 }
