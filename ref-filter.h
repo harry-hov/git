@@ -84,7 +84,8 @@ struct ref_format {
 
 	unsigned int need_newline_at_eol : 1;
 	struct git_graph *graph;
-	unsigned int respect_mailmap : 1;
+	unsigned int respect_mailmap : 1,
+		show_buf_size : 1;
 
 	/* Internal state to ref-filter */
 	int need_color_reset_at_eol;
