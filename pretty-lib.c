@@ -177,6 +177,8 @@ void ref_pretty_print_commit(struct pretty_print_context *pp,
 
 	format.need_newline_at_eol = 0;
 
+	if (pp->rev->graph)
+		format.graph = pp->rev->graph;
 	if (pp->mailmap || fmt_ctx.respect_mailmap == 1)
 		format.respect_mailmap = 1;
 
