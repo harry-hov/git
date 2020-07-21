@@ -78,6 +78,8 @@ struct ref_format {
 
 	unsigned int need_newline_at_eol : 1;
 
+	struct git_graph *graph;
+
 	/* Internal state to ref-filter */
 	int need_color_reset_at_eol;
 };
