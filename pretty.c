@@ -193,24 +193,6 @@ void get_commit_format(const char *arg, struct rev_info *rev)
 	}
 }
 
-/*
- * Generic support for pretty-printing the header
- */
-static int get_one_line(const char *msg)
-{
-	int ret = 0;
-
-	for (;;) {
-		char c = *msg++;
-		if (!c)
-			break;
-		ret++;
-		if (c == '\n')
-			break;
-	}
-	return ret;
-}
-
 /* High bit set, or ISO-2022-INT */
 static int non_ascii(int ch)
 {
@@ -519,15 +501,6 @@ void pp_user_info(struct pretty_print_context *pp,
 		/* notin' */
 		break;
 	}
-}
-
-static int is_blank_line(const char *line, int *len_p)
-{
-	int len = *len_p;
-	while (len && isspace(line[len - 1]))
-		len--;
-	*len_p = len;
-	return !len;
 }
 
 const char *skip_blank_lines(const char *msg)
