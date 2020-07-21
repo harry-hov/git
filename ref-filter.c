@@ -24,6 +24,7 @@
 #include "hashmap.h"
 #include "argv-array.h"
 #include "format-support.h"
+#include "graph.h"
 
 static struct ref_msg {
 	const char *gone;
@@ -2481,7 +2482,7 @@ void show_ref_array_item(struct ref_array_item *info,
 
 	if (format_ref_array_item(info, format, &final_buf, &error_buf))
 		die("%s", error_buf.buf);
-	fwrite(final_buf.buf, 1, final_buf.len, stdout);
+	graph_show_commit_msg(format->graph, stdout, &final_buf);
 	strbuf_release(&error_buf);
 	strbuf_release(&final_buf);
 	if(format->need_newline_at_eol)
