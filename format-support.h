@@ -78,4 +78,8 @@ void rewrap_message_tail(struct strbuf *sb,
 int pretty_mailmap_name(const char **email, size_t *email_len,
 		 	const char **name, size_t *name_len);
 
+int is_blank_line(const char *line, int *len_p);
+
+int get_one_line(const char *msg);
+
 #endif /* FORMAT_SUPPORT_H */
