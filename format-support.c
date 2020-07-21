@@ -375,3 +375,30 @@ int pretty_switch_line_wrapping(struct strbuf *sb, const char *placeholder,
 	} else
 		return 0;
 }
+
+int is_blank_line(const char *line, int *len_p)
+{
+	int len = *len_p;
+	while (len && isspace(line[len - 1]))
+		len--;
+	*len_p = len;
+	return !len;
+}
+
+/*
+ * Generic support for pretty-printing the header
+ */
+int get_one_line(const char *msg)
+{
+	int ret = 0;
+
+	for (;;) {
+		char c = *msg++;
+		if (!c)
+			break;
+		ret++;
+		if (c == '\n')
+			break;
+	}
+	return ret;
+}
