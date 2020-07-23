@@ -179,6 +179,8 @@ void ref_pretty_print_commit(struct pretty_print_context *pp,
 
 	if (pp->rev->graph)
 		format.graph = pp->rev->graph;
+	if (pp->rev->show_log_size)
+		format.show_buf_size = 1;
 
 	verify_ref_format(&format);
 	pretty_print_ref(name, &commit->object.oid, &format);

@@ -772,7 +772,7 @@ void show_log(struct rev_info *opt)
 		strbuf_addstr(&msgbuf, ctx.notes_message);
 	}
 
-	if (opt->show_log_size) {
+	if (opt->show_log_size && !opt->use_ref_filter) {
 		fprintf(opt->diffopt.file, "log size %i\n", (int)msgbuf.len);
 		graph_show_oneline(opt->graph);
 	}
