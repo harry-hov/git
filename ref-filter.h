@@ -81,7 +81,8 @@ struct ref_format {
 	int quote_style;
 	int use_color;
 
-	unsigned int need_newline_at_eol : 1;
+	unsigned int need_newline_at_eol : 1,
+		respect_mailmap : 1;
 
 	/* Internal state to ref-filter */
 	int need_color_reset_at_eol;

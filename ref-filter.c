@@ -107,6 +107,10 @@ static struct email_option {
 	enum { EO_INVALID, EO_RAW, EO_TRIM, EO_LOCALPART } option;
 } email_option;
 
+static struct mailmap_option {
+	enum { MM_TRUE, MM_FALSE } option;
+} mailmap_option;
+
 /*
  * An atom is a valid field atom listed below, possibly prefixed with
  * a "*" to denote deref_tag().
@@ -1127,6 +1131,17 @@ static void grab_date(const char *buf, struct atom_value *v, const char *atomnam
 	v->value = 0;
 }
 
+static void set_email_option(const char *name, int wholen)
+{
+	email_option.option = EO_INVALID;
+	if (!strcmp(name + wholen, "email"))
+		email_option.option = EO_RAW;
+	if (!strcmp(name + wholen, "email:trim"))
+		email_option.option = EO_TRIM;
+	if (!strcmp(name + wholen, "email:localpart"))
+		email_option.option = EO_LOCALPART;
+}
+
 /* See grab_values */
 static void grab_person(const char *who, struct atom_value *val, int deref, void *buf)
 {
@@ -1137,6 +1152,8 @@ static void grab_person(const char *who, struct atom_value *val, int deref, void
 	for (i = 0; i < used_atom_cnt; i++) {
 		const char *name = used_atom[i].name;
 		struct atom_value *v = &val[i];
+		const char *whoname, *whomail;
+
 		if (!!deref != (*name == '*'))
 			continue;
 		if (deref)
@@ -1152,20 +1169,25 @@ static void grab_person(const char *who, struct atom_value *val, int deref, void
 			wholine = find_wholine(who, wholen, buf);
 		if (!wholine)
 			return; /* no point looking for it */
+
+		set_email_option(name, wholen);
+		whoname = copy_name(wholine);
+		whomail = copy_email(wholine);
+
+		if (mailmap_option.option == MM_TRUE) {
+			size_t namelen = strlen(whoname);
+			size_t maillen = strlen(whomail);
+
+			pretty_mailmap_name(&whomail, &maillen, &whoname, &namelen);
+		}
+
 		if (name[wholen] == 0)
 			v->s = copy_line(wholine);
 		else if (!strcmp(name + wholen, "name"))
-			v->s = copy_name(wholine);
+			v->s = xstrdup(whoname);
 		else if (starts_with(name + wholen, "email")) {
-			email_option.option = EO_INVALID;
-			if (!strcmp(name + wholen, "email"))
-				email_option.option = EO_RAW;
-			if (!strcmp(name + wholen, "email:trim"))
-				email_option.option = EO_TRIM;
-			if (!strcmp(name + wholen, "email:localpart"))
-				email_option.option = EO_LOCALPART;
 			if (email_option.option != EO_INVALID)
-				v->s = copy_email(wholine);
+				v->s = xstrdup(whomail);
 		}
 		else if (starts_with(name + wholen, "date"))
 			grab_date(wholine, v, name);
@@ -2451,6 +2473,11 @@ void show_ref_array_item(struct ref_array_item *info,
 {
 	struct strbuf final_buf = STRBUF_INIT;
 	struct strbuf error_buf = STRBUF_INIT;
+
+	if (format->respect_mailmap)
+		mailmap_option.option = MM_TRUE;
+	else
+		mailmap_option.option = MM_FALSE;
 
 	if (format_ref_array_item(info, format, &final_buf, &error_buf))
 		die("%s", error_buf.buf);
