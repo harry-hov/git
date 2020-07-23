@@ -2477,6 +2477,10 @@ void show_ref_array_item(struct ref_array_item *info,
 
 	if (format_ref_array_item(info, format, &final_buf, &error_buf))
 		die("%s", error_buf.buf);
+	if (format->show_buf_size) {
+		fprintf(stdout, "log size %i\n", (int)final_buf.len);
+		graph_show_oneline(format->graph);
+	}
 	graph_show_commit_msg(format->graph, stdout, &final_buf);
 	strbuf_release(&error_buf);
 	strbuf_release(&final_buf);
