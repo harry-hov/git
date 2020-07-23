@@ -77,12 +77,10 @@ struct ref_format {
 	int use_color;
 
 	unsigned int need_newline_at_eol : 1,
-		show_buf_size : 1;
+		show_buf_size : 1,
+		need_color_reset_at_eol : 1; /* Internal state to ref-filter */
 
 	struct git_graph *graph;
-
-	/* Internal state to ref-filter */
-	int need_color_reset_at_eol;
 };
 
 #define REF_FORMAT_INIT { NULL, 0, -1, 1 }
