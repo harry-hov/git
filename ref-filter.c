@@ -1294,7 +1294,7 @@ static void grab_sub_body_contents(struct atom_value *val, int deref, void *buf)
 
 		if (atom->u.contents.option == C_SUB_SANITIZE) {
 			struct strbuf sb = STRBUF_INIT;
-			format_sanitized_subject(&sb, subpos);
+			format_sanitized_subject(&sb, subpos, sublen);
 			v->s = strbuf_detach(&sb, NULL);
 		} else if (atom->u.contents.option == C_SUB)
 			v->s = copy_subject(subpos, sublen);
