@@ -1047,41 +1047,33 @@ static const char *copy_line(const char *buf)
 	return xmemdupz(buf, eol - buf);
 }
 
-static const char *copy_name(const char *buf)
+static const char *copy_email(const char *mail, size_t maillen)
 {
-	const char *cp;
-	for (cp = buf; *cp && *cp != '\n'; cp++) {
-		if (!strncmp(cp, " <", 2))
-			return xmemdupz(buf, cp - buf);
-	}
-	return xstrdup("");
-}
-
-static const char *copy_email(const char *buf)
-{
-	const char *email = strchr(buf, '<');
-	const char *eoemail;
-	if (!email)
+	struct strbuf sb = STRBUF_INIT;
+	const char *at = memchr(mail, '@', maillen);
+	if (!mail)
 		return xstrdup("");
 	switch (email_option.option) {
 	case EO_RAW:
-		eoemail = strchr(email, '>') + 1;
+		strbuf_addch(&sb, '<');
+		strbuf_addstr(&sb, mail);
+		strbuf_addch(&sb, '>');
 		break;
 	case EO_TRIM:
-		email++;
-		eoemail = strchr(email, '>');
+		strbuf_addstr(&sb, mail);
 		break;
 	case EO_LOCALPART:
-		email++;
-		eoemail = strchr(email, '@');
+		if (at)
+			maillen = at - mail;
+		strbuf_add(&sb, mail, maillen);
 		break;
 	default:
-		eoemail = strchr(email, '>') + 1;
+		strbuf_addch(&sb, '<');
+		strbuf_addstr(&sb, mail);
+		strbuf_addch(&sb, '<');
 	}
-
-	if (!eoemail)
-		return xstrdup("");
-	return xmemdupz(email, eoemail - email);
+	//return xmemdupz(email, eoemail - email);
+	return strbuf_detach(&sb, NULL);
 }
 
 static char *copy_subject(const char *buf, unsigned long len)
@@ -1155,6 +1147,10 @@ static void grab_person(const char *who, struct atom_value *val, int deref, void
 		const char *name = used_atom[i].name;
 		struct atom_value *v = &val[i];
 		const char *whoname, *whomail;
+		size_t maillen, namelen, linelen;
+		struct ident_split s;
+
+		const char *end;
 
 		if (!!deref != (*name == '*'))
 			continue;
@@ -1172,24 +1168,30 @@ static void grab_person(const char *who, struct atom_value *val, int deref, void
 		if (!wholine)
 			return; /* no point looking for it */
 
-		set_email_option(name, wholen);
-		whoname = copy_name(wholine);
-		whomail = copy_email(wholine);
+		end = strchr(wholine, '\n');
+		linelen = end - wholine;
+		split_ident_line(&s, wholine, linelen);
+
+		whoname = s.name_begin;
+		namelen = s.name_end - s.name_begin;
+		whomail = s.mail_begin;
+		maillen = s.mail_end - s.mail_begin;
 
 		if (mailmap_option.option == MM_TRUE) {
-			size_t namelen = strlen(whoname);
-			size_t maillen = strlen(whomail);
-
 			pretty_mailmap_name(&whomail, &maillen, &whoname, &namelen);
 		}
 
 		if (name[wholen] == 0)
 			v->s = copy_line(wholine);
-		else if (!strcmp(name + wholen, "name"))
-			v->s = xstrdup(whoname);
+		else if (!strcmp(name + wholen, "name")) {
+			struct strbuf sb = STRBUF_INIT;
+			strbuf_add(&sb, whoname, namelen);
+			v->s = strbuf_detach(&sb, NULL);
+		}
 		else if (starts_with(name + wholen, "email")) {
+			set_email_option(name, wholen);
 			if (email_option.option != EO_INVALID)
-				v->s = xstrdup(whomail);
+				v->s = copy_email(whomail, maillen);
 		}
 		else if (starts_with(name + wholen, "date"))
 			grab_date(wholine, v, name);
