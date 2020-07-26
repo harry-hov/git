@@ -246,7 +246,8 @@ contents:size::
 contents:subject::
 	The first paragraph of the message, which typically is a
 	single line, is taken as the "subject" of the commit or the
-	tag message.
+	tag message. `:sanitize` can be appended for subject line
+	suitable for filename.
 
 contents:body::
 	The remainder of the commit or the tag message that follows
