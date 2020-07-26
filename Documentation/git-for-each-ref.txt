@@ -248,6 +248,9 @@ contents:subject::
 	single line, is taken as the "subject" of the commit or the
 	tag message.
 
+	subject:sanitize::
+		For subject line suitable for filename.
+
 contents:body::
 	The remainder of the commit or the tag message that follows
 	the "subject".
