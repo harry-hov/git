@@ -240,10 +240,11 @@ Append `localpart`, for part before `@` symbol out of trimmed email.
 
 The complete message in a commit and tag object is `contents`.
 Its first line is `contents:subject`, where subject is the concatenation
-of all lines of the commit message up to the first blank line.  The next
-line is `contents:body`, where body is all of the lines after the first
-blank line.  The optional GPG signature is `contents:signature`.  The
-first `N` lines of the message is obtained using `contents:lines=N`.
+of all lines of the commit message up to the first blank line.  The field
+`subject` can be used with modifier `:sanitize` for subject line suitable
+for filename.  The next line is `contents:body`, where body is all of the lines
+after the first blank line.  The optional GPG signature is `contents:signature`.
+The first `N` lines of the message is obtained using `contents:lines=N`.
 Additionally, the trailers as interpreted by linkgit:git-interpret-trailers[1]
 are obtained as `trailers` (or by using the historical alias
 `contents:trailers`).  Non-trailer lines from the trailer block can be omitted
