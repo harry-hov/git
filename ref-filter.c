@@ -494,7 +494,7 @@ static struct {
 	{ "objectsize", SOURCE_OTHER, FIELD_ULONG, objectsize_atom_parser },
 	{ "objectname", SOURCE_OTHER, FIELD_STR, objectname_atom_parser },
 	{ "deltabase", SOURCE_OTHER, FIELD_STR, deltabase_atom_parser },
-	{ "tree", SOURCE_OBJ },
+	{ "tree", SOURCE_OBJ, FIELD_STR, objectname_atom_parser },
 	{ "parent", SOURCE_OBJ },
 	{ "numparent", SOURCE_OBJ, FIELD_ULONG },
 	{ "object", SOURCE_OBJ },
@@ -996,8 +996,15 @@ static void grab_commit_values(struct atom_value *val, int deref, struct object 
 			continue;
 		if (deref)
 			name++;
-		if (!strcmp(name, "tree")) {
-			v->s = xstrdup(oid_to_hex(get_commit_tree_oid(commit)));
+		if (starts_with(name, "tree")) {
+			if (used_atom[i].u.objectname.option == O_SHORT)
+				v->s = xstrdup(find_unique_abbrev(get_commit_tree_oid(commit), DEFAULT_ABBREV));
+			else if (used_atom[i].u.objectname.option == O_FULL)
+				v->s = xstrdup(oid_to_hex(get_commit_tree_oid(commit)));
+			else if (used_atom[i].u.objectname.option == O_LENGTH)
+				v->s = xstrdup(find_unique_abbrev(get_commit_tree_oid(commit), used_atom[i].u.objectname.length));
+			else
+				BUG("unknown %%(tree) option");
 		}
 		else if (!strcmp(name, "numparent")) {
 			v->value = commit_list_count(commit->parents);
