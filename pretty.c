@@ -1114,6 +1114,47 @@ static int format_trailer_match_cb(const struct strbuf *key, void *ud)
 	return 0;
 }
 
+static const char *format_set_trailers_options(struct process_trailer_options *opts,
+					       struct string_list *filter_list,
+					       struct strbuf *sepbuf,
+					       const char *arg,
+					       int *flag)
+{
+	for (;;) {
+		const char *argval;
+		size_t arglen;
+
+		if (match_placeholder_arg_value(arg, "key", &arg, &argval, &arglen)) {
+			uintptr_t len = arglen;
+
+			if (!argval) {
+				*flag = 1;
+				return arg;
+			}
+
+			if (len && argval[len - 1] == ':')
+				len--;
+			string_list_append(filter_list, argval)->util = (char *)len;
+
+			opts->filter = format_trailer_match_cb;
+			opts->filter_data = filter_list;
+			opts->only_trailers = 1;
+		} else if (match_placeholder_arg_value(arg, "separator", &arg, &argval, &arglen)) {
+			char *fmt;
+
+			strbuf_reset(sepbuf);
+			fmt = xstrndup(argval, arglen);
+			strbuf_expand(sepbuf, fmt, strbuf_expand_literal_cb, NULL);
+			free(fmt);
+			opts->separator = sepbuf;
+		} else if (!match_placeholder_bool_arg(arg, "only", &arg, &opts->only_trailers) &&
+				!match_placeholder_bool_arg(arg, "unfold", &arg, &opts->unfold) &&
+				!match_placeholder_bool_arg(arg, "valueonly", &arg, &opts->value_only))
+			break;
+	}
+	return arg;
+}
+
 static size_t format_commit_one(struct strbuf *sb, /* in UTF-8 */
 				const char *placeholder,
 				void *context)
@@ -1385,47 +1426,18 @@ static size_t format_commit_one(struct strbuf *sb, /* in UTF-8 */
 		struct string_list filter_list = STRING_LIST_INIT_NODUP;
 		struct strbuf sepbuf = STRBUF_INIT;
 		size_t ret = 0;
+		int flag = 0;
 
 		opts.no_divider = 1;
 
 		if (*arg == ':') {
 			arg++;
-			for (;;) {
-				const char *argval;
-				size_t arglen;
-
-				if (match_placeholder_arg_value(arg, "key", &arg, &argval, &arglen)) {
-					uintptr_t len = arglen;
-
-					if (!argval)
-						goto trailer_out;
-
-					if (len && argval[len - 1] == ':')
-						len--;
-					string_list_append(&filter_list, argval)->util = (char *)len;
-
-					opts.filter = format_trailer_match_cb;
-					opts.filter_data = &filter_list;
-					opts.only_trailers = 1;
-				} else if (match_placeholder_arg_value(arg, "separator", &arg, &argval, &arglen)) {
-					char *fmt;
-
-					strbuf_reset(&sepbuf);
-					fmt = xstrndup(argval, arglen);
-					strbuf_expand(&sepbuf, fmt, strbuf_expand_literal_cb, NULL);
-					free(fmt);
-					opts.separator = &sepbuf;
-				} else if (!match_placeholder_bool_arg(arg, "only", &arg, &opts.only_trailers) &&
-					   !match_placeholder_bool_arg(arg, "unfold", &arg, &opts.unfold) &&
-					   !match_placeholder_bool_arg(arg, "valueonly", &arg, &opts.value_only))
-					break;
-			}
+			arg = format_set_trailers_options(&opts, &filter_list, &sepbuf, arg, &flag);
 		}
-		if (*arg == ')') {
+		if (*arg == ')' && !flag) {
 			format_trailers_from_commit(sb, msg + c->subject_off, &opts);
 			ret = arg - placeholder + 1;
 		}
-	trailer_out:
 		string_list_clear(&filter_list, 0);
 		strbuf_release(&sepbuf);
 		return ret;
