@@ -1313,12 +1313,13 @@ static size_t format_commit_one(struct strbuf *sb, /* in UTF-8 */
 		struct string_list filter_list = STRING_LIST_INIT_NODUP;
 		struct strbuf sepbuf = STRBUF_INIT;
 		size_t ret = 0;
+		const char *unused = NULL;
 
 		opts.no_divider = 1;
 
 		if (*arg == ':') {
 			arg++;
-			if (format_set_trailers_options(&opts, &filter_list, &sepbuf, &arg))
+			if (format_set_trailers_options(&opts, &filter_list, &sepbuf, &arg, &unused))
 				goto trailer_out;
 		}
 		if (*arg == ')') {
@@ -1328,6 +1329,7 @@ static size_t format_commit_one(struct strbuf *sb, /* in UTF-8 */
 	trailer_out:
 		string_list_clear(&filter_list, 0);
 		strbuf_release(&sepbuf);
+		free((char *)unused);
 		return ret;
 	}
 

@@ -119,11 +119,26 @@ static int format_trailer_match_cb(const struct strbuf *key, void *ud)
 int format_set_trailers_options(struct process_trailer_options *opts,
 				struct string_list *filter_list,
 				struct strbuf *sepbuf,
-				const char **arg)
+				const char **arg,
+				const char **err)
 {
 	for (;;) {
 		const char *argval;
 		size_t arglen;
+
+		if (**arg != ')') {
+			size_t vallen = strcspn(*arg, "=,)");
+			const char *valstart = xstrndup(*arg, vallen);
+			if (strcmp(valstart, "key") &&
+				strcmp(valstart, "separator") &&
+				strcmp(valstart, "only") &&
+				strcmp(valstart, "valueonly") &&
+				strcmp(valstart, "unfold")) {
+					*err = xstrdup(valstart);
+					return 1;
+				}
+			free((char *)valstart);
+		}
 
 		if (match_placeholder_arg_value(*arg, "key", arg, &argval, &arglen)) {
 			uintptr_t len = arglen;
