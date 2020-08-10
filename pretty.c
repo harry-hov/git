@@ -1137,10 +1137,7 @@ static int format_set_trailers_options(struct process_trailer_options *opts,
 			opts->filter_data = filter_list;
 			opts->only_trailers = 1;
 		} else if (match_placeholder_arg_value(*arg, "separator", arg, &argval, &arglen)) {
-			char *fmt;
-
-			strbuf_reset(sepbuf);
-			fmt = xstrndup(argval, arglen);
+			char *fmt = xstrndup(argval, arglen);
 			strbuf_expand(sepbuf, fmt, strbuf_expand_literal_cb, NULL);
 			free(fmt);
 			opts->separator = sepbuf;
