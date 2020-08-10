@@ -810,6 +810,15 @@ test_expect_success 'set up trailers for next test' '
 	EOF
 '
 
+test_expect_success 'format %(trailers) shows trailers' '
+	git for-each-ref --format="%(trailers)" refs/heads/master >actual &&
+	{
+		cat trailers &&
+		echo
+	} >expect &&
+	test_cmp expect actual
+'
+
 test_expect_success '%(trailers:unfold) unfolds trailers' '
 	git for-each-ref --format="%(trailers:unfold)" refs/heads/master >actual &&
 	{
@@ -828,12 +837,124 @@ test_expect_success '%(trailers:only) shows only "key: value" trailers' '
 	test_cmp expect actual
 '
 
+test_expect_success '%(trailers:only=yes) shows only "key: value" trailers' '
+	git for-each-ref --format="%(trailers:only=yes)" refs/heads/master >actual &&
+	{
+		grep -v patch.description <trailers &&
+		echo
+	} >expect &&
+	test_cmp expect actual
+'
+
+test_expect_success '%(trailers:only=no) shows all trailers' '
+	git for-each-ref --format="%(trailers:only=no)" refs/heads/master >actual &&
+	{
+		cat trailers &&
+		echo
+	} >expect &&
+	test_cmp expect actual
+'
+
+test_expect_success '%(trailers:only=no,only=true) shows only "key: value" trailers' '
+	git for-each-ref --format="%(trailers:only=yes)" refs/heads/master >actual &&
+	{
+		grep -v patch.description <trailers &&
+		echo
+	} >expect &&
+	test_cmp expect actual
+'
+
 test_expect_success '%(trailers:only) and %(trailers:unfold) work together' '
 	git for-each-ref --format="%(trailers:only,unfold)" refs/heads/master >actual &&
 	git for-each-ref --format="%(trailers:unfold,only)" refs/heads/master >reverse &&
 	test_cmp actual reverse &&
 	{
 		grep -v patch.description <trailers | unfold &&
+		echo
+	} >expect &&
+	test_cmp expect actual
+'
+
+test_expect_success '%(trailers:key=foo) shows that trailer' '
+	git for-each-ref --format="%(trailers:key=Signed-off-by)" refs/heads/master >actual &&
+	echo "Signed-off-by: A U Thor <author@example.com>\n" >expect &&
+	test_cmp expect actual
+'
+
+test_expect_success '%(trailers:key=foo) is case insensitive' '
+	git for-each-ref --format="%(trailers:key=SiGned-oFf-bY)" refs/heads/master >actual &&
+	echo "Signed-off-by: A U Thor <author@example.com>\n" >expect &&
+	test_cmp expect actual
+'
+
+test_expect_success '%(trailers:key=foo:) trailing colon also works' '
+	git for-each-ref --format="%(trailers:key=Signed-off-by:)" refs/heads/master >actual &&
+	echo "Signed-off-by: A U Thor <author@example.com>\n" >expect &&
+	test_cmp expect actual
+'
+
+test_expect_success '%(trailers:key=foo) multiple keys' '
+	git for-each-ref --format="%(trailers:key=Reviewed-by:,key=Signed-off-by)" refs/heads/master >actual &&
+	{
+		echo "Reviewed-by: A U Thor <author@example.com>"
+		echo "Signed-off-by: A U Thor <author@example.com>\n"
+	} >expect &&
+	test_cmp expect actual
+'
+
+test_expect_success '%(trailers:key=nonexistent) becomes empty' '
+	git for-each-ref --format="x%(trailers:key=Shined-off-by:)x" refs/heads/master >actual &&
+	echo "xx" >expect &&
+	test_cmp expect actual
+'
+
+test_expect_success '%(trailers:key=foo) handles multiple lines even if folded' '
+	git for-each-ref --format="%(trailers:key=Acked-by)" refs/heads/master >actual &&
+	{
+		grep -v patch.description <trailers | grep -v Signed-off-by | grep -v Reviewed-by &&
+		echo
+	} >expect &&
+	test_cmp expect actual
+'
+
+test_expect_success '%(trailers:key=foo,unfold) properly unfolds' '
+	git for-each-ref --format="%(trailers:key=Signed-Off-by,unfold)" refs/heads/master >actual &&
+	{
+		unfold <trailers | grep Signed-off-by &&
+		echo
+	} >expect &&
+	test_cmp expect actual
+'
+
+test_expect_success 'pretty format %(trailers:key=foo,only=no) also includes nontrailer lines' '
+	git for-each-ref --format="%(trailers:key=Signed-off-by,only=no)" refs/heads/master >actual &&
+	{
+		echo "Signed-off-by: A U Thor <author@example.com>" &&
+		grep patch.description <trailers &&
+		echo
+	} >expect &&
+	test_cmp expect actual
+'
+
+test_expect_success '%(trailers:key=foo,valueonly) shows only value' '
+	git for-each-ref --format="%(trailers:key=Signed-off-by,valueonly)" refs/heads/master >actual &&
+	echo "A U Thor <author@example.com>\n" >expect &&
+	test_cmp expect actual
+'
+
+test_expect_success '%(trailers:key) without value is error' '
+	# error message cannot be checked under i18n
+	cat >expect <<-EOF &&
+	fatal: expected %(trailers:key=<value>)
+	EOF
+	test_must_fail git for-each-ref --format="%(trailers:key)" refs/heads/master 2>actual &&
+	test_i18ncmp expect actual
+'
+
+test_expect_success 'format %(contents:trailers) shows trailers' '
+	git for-each-ref --format="%(contents:trailers)" refs/heads/master >actual &&
+	{
+		cat trailers &&
 		echo
 	} >expect &&
 	test_cmp expect actual
@@ -857,6 +978,33 @@ test_expect_success '%(contents:trailers:only) shows only "key: value" trailers'
 	test_cmp expect actual
 '
 
+test_expect_success '%(contents:trailers:only=yes) shows only "key: value" trailers' '
+	git for-each-ref --format="%(contents:trailers:only=yes)" refs/heads/master >actual &&
+	{
+		grep -v patch.description <trailers &&
+		echo
+	} >expect &&
+	test_cmp expect actual
+'
+
+test_expect_success '%(contents:trailers:only=no) shows all trailers' '
+	git for-each-ref --format="%(contents:trailers:only=no)" refs/heads/master >actual &&
+	{
+		cat trailers &&
+		echo
+	} >expect &&
+	test_cmp expect actual
+'
+
+test_expect_success '%(contents:trailers:only=no,only=true) shows only "key: value" trailers' '
+	git for-each-ref --format="%(contents:trailers:only=yes)" refs/heads/master >actual &&
+	{
+		grep -v patch.description <trailers &&
+		echo
+	} >expect &&
+	test_cmp expect actual
+'
+
 test_expect_success '%(contents:trailers:only) and %(contents:trailers:unfold) work together' '
 	git for-each-ref --format="%(contents:trailers:only,unfold)" refs/heads/master >actual &&
 	git for-each-ref --format="%(contents:trailers:unfold,only)" refs/heads/master >reverse &&
@@ -866,6 +1014,82 @@ test_expect_success '%(contents:trailers:only) and %(contents:trailers:unfold) w
 		echo
 	} >expect &&
 	test_cmp expect actual
+'
+
+test_expect_success '%(contents:trailers:key=foo) shows that trailer' '
+	git for-each-ref --format="%(contents:trailers:key=Signed-off-by)" refs/heads/master >actual &&
+	echo "Signed-off-by: A U Thor <author@example.com>\n" >expect &&
+	test_cmp expect actual
+'
+
+test_expect_success '%(contents:trailers:key=foo) is case insensitive' '
+	git for-each-ref --format="%(contents:trailers:key=SiGned-oFf-bY)" refs/heads/master >actual &&
+	echo "Signed-off-by: A U Thor <author@example.com>\n" >expect &&
+	test_cmp expect actual
+'
+
+test_expect_success '%(contents:trailers:key=foo:) trailing colon also works' '
+	git for-each-ref --format="%(contents:trailers:key=Signed-off-by:)" refs/heads/master >actual &&
+	echo "Signed-off-by: A U Thor <author@example.com>\n" >expect &&
+	test_cmp expect actual
+'
+
+test_expect_success '%(contents:trailers:key=foo) multiple keys' '
+	git for-each-ref --format="%(contents:trailers:key=Reviewed-by:,key=Signed-off-by)" refs/heads/master >actual &&
+	{
+		echo "Reviewed-by: A U Thor <author@example.com>"
+		echo "Signed-off-by: A U Thor <author@example.com>\n"
+	} >expect &&
+	test_cmp expect actual
+'
+
+test_expect_success '%(contents:trailers:key=nonexistent) becomes empty' '
+	git for-each-ref --format="x%(contents:trailers:key=Shined-off-by:)x" refs/heads/master >actual &&
+	echo "xx" >expect &&
+	test_cmp expect actual
+'
+
+test_expect_success '%(contents:trailers:key=foo) handles multiple lines even if folded' '
+	git for-each-ref --format="%(contents:trailers:key=Acked-by)" refs/heads/master >actual &&
+	{
+		grep -v patch.description <trailers | grep -v Signed-off-by | grep -v Reviewed-by &&
+		echo
+	} >expect &&
+	test_cmp expect actual
+'
+
+test_expect_success '%(contents:trailers:key=foo,unfold) properly unfolds' '
+	git for-each-ref --format="%(contents:trailers:key=Signed-Off-by,unfold)" refs/heads/master >actual &&
+	{
+		unfold <trailers | grep Signed-off-by &&
+		echo
+	} >expect &&
+	test_cmp expect actual
+'
+
+test_expect_success 'pretty format %(contents:trailers:key=foo,only=no) also includes nontrailer lines' '
+	git for-each-ref --format="%(contents:trailers:key=Signed-off-by,only=no)" refs/heads/master >actual &&
+	{
+		echo "Signed-off-by: A U Thor <author@example.com>" &&
+		grep patch.description <trailers &&
+		echo
+	} >expect &&
+	test_cmp expect actual
+'
+
+test_expect_success '%(contents:trailers:key=foo,valueonly) shows only value' '
+	git for-each-ref --format="%(contents:trailers:key=Signed-off-by,valueonly)" refs/heads/master >actual &&
+	echo "A U Thor <author@example.com>\n" >expect &&
+	test_cmp expect actual
+'
+
+test_expect_success '%(contents:trailers:key) without value is error' '
+	# error message cannot be checked under i18n
+	cat >expect <<-EOF &&
+	fatal: expected %(trailers:key=<value>)
+	EOF
+	test_must_fail git for-each-ref --format="%(contents:trailers:key)" refs/heads/master 2>actual &&
+	test_i18ncmp expect actual
 '
 
 test_expect_success '%(trailers) rejects unknown trailers arguments' '
