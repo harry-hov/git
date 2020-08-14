@@ -821,38 +821,23 @@ test_expect_success '%(trailers:unfold) unfolds trailers' '
 	test_cmp expect actual
 '
 
-test_expect_success '%(trailers:only) shows only "key: value" trailers' '
-	{
-		grep -v patch.description <trailers &&
-		echo
-	} >expect &&
-	git for-each-ref --format="%(trailers:only)" refs/heads/master >actual &&
-	test_cmp expect actual &&
-	git for-each-ref --format="%(contents:trailers:only)" refs/heads/master >actual &&
-	test_cmp expect actual
-'
+test_show_key_value_trailers () {
+	option="$1"
+	test_expect_success "%($option) shows only 'key: value' trailers" '
+		{
+			grep -v patch.description <trailers &&
+			echo
+		} >expect &&
+		git for-each-ref --format="%($option)" refs/heads/master >actual &&
+		test_cmp expect actual &&
+		git for-each-ref --format="%(contents:$option)" refs/heads/master >actual &&
+		test_cmp expect actual
+	'
+}
 
-test_expect_success '%(trailers:only=no,only=true) shows only "key: value" trailers' '
-	{
-		grep -v patch.description <trailers &&
-		echo
-	} >expect &&
-	git for-each-ref --format="%(trailers:only=yes)" refs/heads/master >actual &&
-	test_cmp expect actual &&
-	git for-each-ref --format="%(contents:trailers:only=yes)" refs/heads/master >actual &&
-	test_cmp expect actual
-'
-
-test_expect_success '%(trailers:only=yes) shows only "key: value" trailers' '
-	{
-		grep -v patch.description <trailers &&
-		echo
-	} >expect &&
-	git for-each-ref --format="%(trailers:only=yes)" refs/heads/master >actual &&
-	test_cmp expect actual &&
-	git for-each-ref --format="%(contents:trailers:only=yes)" refs/heads/master >actual &&
-	test_cmp expect actual
-'
+test_show_key_value_trailers 'trailers:only'
+test_show_key_value_trailers 'trailers:only=no,only=true'
+test_show_key_value_trailers 'trailers:only=yes'
 
 test_expect_success '%(trailers:only=no) shows all trailers' '
 	{
@@ -880,48 +865,26 @@ test_expect_success '%(trailers:only) and %(trailers:unfold) work together' '
 	test_cmp expect actual
 '
 
-test_expect_success '%(trailers:key=foo) shows that trailer' '
-	echo "Signed-off-by: A U Thor <author@example.com>\n" >expect &&
-	git for-each-ref --format="%(trailers:key=Signed-off-by)" refs/heads/master >actual &&
-	test_cmp expect actual &&
-	git for-each-ref --format="%(contents:trailers:key=Signed-off-by)" refs/heads/master >actual &&
-	test_cmp expect actual
-'
+test_trailer_output() {
+	option="$1"
+	output="$2"
+	msg="$3"
+	test_expect_success "$msg" '
+		echo $output >expect &&
+		git for-each-ref --format="%($option)" refs/heads/master >actual &&
+		cat expect &&
+		cat actual &&
+		test_cmp expect actual &&
+		git for-each-ref --format="%(contents:$option)" refs/heads/master >actual &&
+		test_cmp expect actual
+	'
+}
 
-test_expect_success '%(trailers:key=foo) is case insensitive' '
-	echo "Signed-off-by: A U Thor <author@example.com>\n" >expect &&
-	git for-each-ref --format="%(trailers:key=SiGned-oFf-bY)" refs/heads/master >actual &&
-	test_cmp expect actual &&
-	git for-each-ref --format="%(contents:trailers:key=SiGned-oFf-bY)" refs/heads/master >actual &&
-	test_cmp expect actual
-'
-
-test_expect_success '%(trailers:key=foo:) trailing colon also works' '
-	echo "Signed-off-by: A U Thor <author@example.com>\n" >expect &&
-	git for-each-ref --format="%(trailers:key=Signed-off-by:)" refs/heads/master >actual &&
-	test_cmp expect actual &&
-	git for-each-ref --format="%(contents:trailers:key=Signed-off-by:)" refs/heads/master >actual &&
-	test_cmp expect actual
-'
-
-test_expect_success '%(trailers:key=foo) multiple keys' '
-	{
-		echo "Reviewed-by: A U Thor <author@example.com>"
-		echo "Signed-off-by: A U Thor <author@example.com>\n"
-	} >expect &&
-	git for-each-ref --format="%(trailers:key=Reviewed-by:,key=Signed-off-by)" refs/heads/master >actual &&
-	test_cmp expect actual &&
-	git for-each-ref --format="%(contents:trailers:key=Reviewed-by:,key=Signed-off-by)" refs/heads/master >actual &&
-	test_cmp expect actual
-'
-
-test_expect_success '%(trailers:key=nonexistent) becomes empty' '
-	echo "xx" >expect &&
-	git for-each-ref --format="x%(trailers:key=Shined-off-by:)x" refs/heads/master >actual &&
-	test_cmp expect actual &&
-	git for-each-ref --format="x%(contents:trailers:key=Shined-off-by:)x" refs/heads/master >actual &&
-	test_cmp expect actual
-'
+test_trailer_output 'trailers:key=Signed-off-by' 'Signed-off-by: A U Thor <author@example.com>\n' '%(trailers:key=foo) shows that trailer'
+test_trailer_output 'trailers:key=SiGned-oFf-bY' 'Signed-off-by: A U Thor <author@example.com>\n' '%(trailers:key=foo) is case insensitive'
+test_trailer_output 'trailers:key=Signed-off-by:' 'Signed-off-by: A U Thor <author@example.com>\n' '%(trailers:key=foo:) trailing colon also works'
+test_trailer_output 'trailers:key=Reviewed-by:,key=Signed-off-by' 'Reviewed-by: A U Thor <author@example.com>\nSigned-off-by: A U Thor <author@example.com>\n' '%(trailers:key=foo) multiple keys'
+test_trailer_output 'trailers:key=Shined-off-by:' '' '%(trailers:key=nonexistent) becomes empty'
 
 test_expect_success '%(trailers:key=foo) handles multiple lines even if folded' '
 	{
@@ -957,43 +920,27 @@ test_expect_success 'pretty format %(trailers:key=foo,only=no) also includes non
 	test_cmp expect actual
 '
 
-test_expect_success '%(trailers:key=foo,valueonly) shows only value' '
-	echo "A U Thor <author@example.com>\n" >expect &&
-	git for-each-ref --format="%(trailers:key=Signed-off-by,valueonly)" refs/heads/master >actual &&
-	test_cmp expect actual &&
-	git for-each-ref --format="%(contents:trailers:key=Signed-off-by,valueonly)" refs/heads/master >actual &&
-	test_cmp expect actual
-'
+test_trailer_output 'trailers:key=Signed-off-by,valueonly' 'A U Thor <author@example.com>\n' '%(trailers:key=foo,valueonly) shows only value'
+test_trailer_output 'trailers:separator=%x2C,key=Reviewed-by,key=Signed-off-by:' 'Reviewed-by: A U Thor <author@example.com>,Signed-off-by: A U Thor <author@example.com>' '%(trailers:separator) changes separator'
 
-test_expect_success '%(trailers:key) without value is error' '
-	# error message cannot be checked under i18n
-	cat >expect <<-EOF &&
-	fatal: expected %(trailers:key=<value>)
-	EOF
-	test_must_fail git for-each-ref --format="%(trailers:key)" refs/heads/master 2>actual &&
-	test_i18ncmp expect actual &&
-	test_must_fail git for-each-ref --format="%(contents:trailers:key)" refs/heads/master 2>actual &&
-	test_i18ncmp expect actual
-'
+test_trailer_error () {
+	option="$1"
+	error="$2"
+	msg="$3"
+	test_expect_success "$msg" '
+		# error message cannot be checked under i18n
+		cat >expect <<-EOF &&
+		$error
+		EOF
+		test_must_fail git for-each-ref --format="%($option)" refs/heads/master 2>actual &&
+		test_i18ncmp expect actual &&
+		test_must_fail git for-each-ref --format="%(contents:$option)" refs/heads/master 2>actual &&
+		test_i18ncmp expect actual
+	'
+}
 
-test_expect_success '%(trailers:separator) changes separator' '
-	echo "XReviewed-by: A U Thor <author@example.com>,Signed-off-by: A U Thor <author@example.com>X" >expect &&
-	git for-each-ref --format="X%(trailers:separator=%x2C,key=Reviewed-by,key=Signed-off-by:)X" refs/heads/master >actual &&
-	test_cmp expect actual &&
-	git for-each-ref --format="X%(contents:trailers:separator=%x2C,key=Reviewed-by,key=Signed-off-by:)X" refs/heads/master >actual &&
-	test_cmp expect actual
-'
-
-test_expect_success '%(trailers) rejects unknown trailers arguments' '
-	# error message cannot be checked under i18n
-	cat >expect <<-EOF &&
-	fatal: unknown %(trailers) argument: unsupported
-	EOF
-	test_must_fail git for-each-ref --format="%(trailers:unsupported)" 2>actual &&
-	test_i18ncmp expect actual &&
-	test_must_fail git for-each-ref --format="%(contents:trailers:unsupported)" 2>actual &&
-	test_i18ncmp expect actual
-'
+test_trailer_error 'trailers:key' 'fatal: expected %(trailers:key=<value>)' '%(trailers:key) without value is error'
+test_trailer_error 'trailers:unsupported' 'fatal: unknown %(trailers) argument: unsupported' '%(trailers) rejects unknown trailers arguments'
 
 test_expect_success 'basic atom: head contents:trailers' '
 	git for-each-ref --format="%(contents:trailers)" refs/heads/master >actual &&
