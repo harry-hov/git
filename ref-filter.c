@@ -338,6 +338,22 @@ static int trailers_atom_parser(const struct ref_format *format, struct used_ato
 	return 0;
 }
 
+static int check_format_field(const char *arg, const char *field, const char **option)
+{
+	const char *opt;
+	if (skip_prefix(arg, field, &opt)) {
+		if (*opt == '\0') {
+			*option = NULL;
+			return 1;
+		}
+		else if (*opt == ':') {
+			*option = opt + 1;
+			return 1;
+		}
+	}
+	return 0;
+}
+
 static int contents_atom_parser(const struct ref_format *format, struct used_atom *atom,
 				const char *arg, struct strbuf *err)
 {
@@ -351,9 +367,8 @@ static int contents_atom_parser(const struct ref_format *format, struct used_ato
 		atom->u.contents.option = C_SIG;
 	else if (!strcmp(arg, "subject"))
 		atom->u.contents.option = C_SUB;
-	else if (skip_prefix(arg, "trailers", &arg)) {
-		skip_prefix(arg, ":", &arg);
-		if (trailers_atom_parser(format, atom, *arg ? arg : NULL, err))
+	else if (check_format_field(arg, "trailers", &arg)) {
+		if (trailers_atom_parser(format, atom, arg, err))
 			return -1;
 	} else if (skip_prefix(arg, "lines=", &arg)) {
 		atom->u.contents.option = C_LINES;
