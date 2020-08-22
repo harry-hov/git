@@ -195,7 +195,7 @@ void get_commit_format(const char *arg, struct rev_info *rev)
 /*
  * Generic support for pretty-printing the header
  */
-static int get_one_line(const char *msg)
+int pretty_get_one_line(const char *msg)
 {
 	int ret = 0;
 
@@ -520,7 +520,7 @@ void pp_user_info(struct pretty_print_context *pp,
 	}
 }
 
-static int is_blank_line(const char *line, int *len_p)
+int pretty_is_blank_line(const char *line, int *len_p)
 {
 	int len = *len_p;
 	while (len && isspace(line[len - 1]))
@@ -532,11 +532,11 @@ static int is_blank_line(const char *line, int *len_p)
 const char *skip_blank_lines(const char *msg)
 {
 	for (;;) {
-		int linelen = get_one_line(msg);
+		int linelen = pretty_get_one_line(msg);
 		int ll = linelen;
 		if (!linelen)
 			break;
-		if (!is_blank_line(msg, &ll))
+		if (!pretty_is_blank_line(msg, &ll))
 			break;
 		msg += linelen;
 	}
@@ -830,10 +830,10 @@ const char *format_subject(struct strbuf *sb, const char *msg,
 
 	for (;;) {
 		const char *line = msg;
-		int linelen = get_one_line(line);
+		int linelen = pretty_get_one_line(line);
 
 		msg += linelen;
-		if (!linelen || is_blank_line(line, &linelen))
+		if (!linelen || pretty_is_blank_line(line, &linelen))
 			break;
 
 		if (!sb)
@@ -1702,7 +1702,7 @@ static void pp_header(struct pretty_print_context *pp,
 
 	for (;;) {
 		const char *name, *line = *msg_p;
-		int linelen = get_one_line(*msg_p);
+		int linelen = pretty_get_one_line(*msg_p);
 
 		if (!linelen)
 			return;
@@ -1898,13 +1898,13 @@ void pp_remainder(struct pretty_print_context *pp,
 	int first = 1;
 	for (;;) {
 		const char *line = *msg_p;
-		int linelen = get_one_line(line);
+		int linelen = pretty_get_one_line(line);
 		*msg_p += linelen;
 
 		if (!linelen)
 			break;
 
-		if (is_blank_line(line, &linelen)) {
+		if (pretty_is_blank_line(line, &linelen)) {
 			if (first)
 				continue;
 			if (pp->fmt == CMIT_FMT_SHORT)
