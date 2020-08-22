@@ -1197,6 +1197,27 @@ int format_set_trailers_options(struct process_trailer_options *opts,
 	return 0;
 }
 
+size_t format_commit_color(struct strbuf *sb, const char *start,
+			   struct format_commit_context *c)
+{
+	if (starts_with(start + 1, "(auto)")) {
+		c->auto_color = want_color(c->pretty_ctx->color);
+		if (c->auto_color && sb->len)
+			strbuf_addstr(sb, GIT_COLOR_RESET);
+		return 7; /* consumed 7 bytes, "C(auto)" */
+	} else {
+		int ret = parse_color(sb, start, c);
+		if (ret)
+			c->auto_color = 0;
+		/*
+			* Otherwise, we decided to treat %C<unknown>
+			* as a literal string, and the previous
+			* %C(auto) is still valid.
+			*/
+		return ret;
+	}
+}
+
 static size_t format_commit_one(struct strbuf *sb, /* in UTF-8 */
 				const char *placeholder,
 				void *context)
@@ -1216,22 +1237,7 @@ static size_t format_commit_one(struct strbuf *sb, /* in UTF-8 */
 
 	switch (placeholder[0]) {
 	case 'C':
-		if (starts_with(placeholder + 1, "(auto)")) {
-			c->auto_color = want_color(c->pretty_ctx->color);
-			if (c->auto_color && sb->len)
-				strbuf_addstr(sb, GIT_COLOR_RESET);
-			return 7; /* consumed 7 bytes, "C(auto)" */
-		} else {
-			int ret = parse_color(sb, placeholder, c);
-			if (ret)
-				c->auto_color = 0;
-			/*
-			 * Otherwise, we decided to treat %C<unknown>
-			 * as a literal string, and the previous
-			 * %C(auto) is still valid.
-			 */
-			return ret;
-		}
+		return format_commit_color(sb, placeholder, c);
 	case 'w':
 		if (placeholder[1] == '(') {
 			unsigned long width = 0, indent1 = 0, indent2 = 0;
