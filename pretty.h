@@ -212,4 +212,7 @@ int pretty_print_reflog(struct format_commit_context *c, struct strbuf *sb,
 int pretty_switch_line_wrapping(struct strbuf *sb, const char *placeholder,
 				struct format_commit_context *c);
 
+size_t parse_padding_placeholder(const char *placeholder,
+				 struct format_commit_context *c);
+
 #endif /* PRETTY_H */
