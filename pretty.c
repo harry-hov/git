@@ -960,8 +960,8 @@ static size_t parse_color(struct strbuf *sb, /* in UTF-8 */
 	return rest - placeholder;
 }
 
-static size_t parse_padding_placeholder(const char *placeholder,
-					struct format_commit_context *c)
+size_t parse_padding_placeholder(const char *placeholder,
+				 struct format_commit_context *c)
 {
 	const char *ch = placeholder;
 	enum pp_flush_type flush_type;
