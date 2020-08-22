@@ -27,6 +27,9 @@ static size_t convert_format(struct strbuf *sb, const char *start, void *data)
 		return format_commit_color(sb, start, c);
 	case 'w':
 		return pretty_switch_line_wrapping(sb, start, c);
+	case '<':
+	case '>':
+		return parse_padding_placeholder(start, c);
 	case 'H':
 		strbuf_addstr(sb, diff_get_color(c->auto_color, DIFF_COMMIT));
 		strbuf_addstr(sb, "%(objectname)");
