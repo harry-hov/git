@@ -215,4 +215,8 @@ int pretty_switch_line_wrapping(struct strbuf *sb, const char *placeholder,
 size_t parse_padding_placeholder(const char *placeholder,
 				 struct format_commit_context *c);
 
+int pretty_is_blank_line(const char *line, int *len_p);
+
+int pretty_get_one_line(const char *msg);
+
 #endif /* PRETTY_H */
