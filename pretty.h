@@ -3,6 +3,7 @@
 
 #include "cache.h"
 #include "string-list.h"
+#include "gpg-interface.h"
 
 struct commit;
 struct strbuf;
@@ -53,6 +54,51 @@ struct pretty_print_context {
 	 */
 	struct string_list in_body_headers;
 	int graph_width;
+};
+
+struct pretty_chunk {
+	size_t off;
+	size_t len;
+};
+
+enum pp_flush_type {
+	pp_no_flush,
+	pp_flush_right,
+	pp_flush_left,
+	pp_flush_left_and_steal,
+	pp_flush_both
+};
+
+enum pp_trunc_type {
+	pp_trunc_none,
+	pp_trunc_left,
+	pp_trunc_middle,
+	pp_trunc_right
+};
+
+struct format_commit_context {
+	const struct commit *commit;
+	const struct pretty_print_context *pretty_ctx;
+	unsigned commit_header_parsed:1;
+	unsigned commit_message_parsed:1;
+	struct signature_check signature_check;
+	enum pp_flush_type flush_type;
+	enum pp_trunc_type truncate;
+	const char *message;
+	char *commit_encoding;
+	size_t width, indent1, indent2;
+	int auto_color;
+	int padding;
+
+	/* These offsets are relative to the start of the commit message. */
+	struct pretty_chunk author;
+	struct pretty_chunk committer;
+	size_t message_off;
+	size_t subject_off;
+	size_t body_off;
+
+	/* The following ones are relative to the result struct strbuf. */
+	size_t wrap_start;
 };
 
 /* Check whether commit format is mail. */
