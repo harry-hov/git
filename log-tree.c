@@ -758,10 +758,7 @@ void show_log(struct rev_info *opt)
 	if (opt->graph)
 		ctx.graph_width = graph_width(opt->graph);
 
-	if (opt->use_ref_filter)
-		ref_pretty_print_commit(&ctx, commit, &msgbuf);
-	else
-		pretty_print_commit(&ctx, commit, &msgbuf);
+	ref_pretty_print_commit(&ctx, commit, &msgbuf);
 
 	if (opt->add_signoff)
 		append_signoff(&msgbuf, 0, APPEND_SIGNOFF_DEDUP);
@@ -771,11 +768,6 @@ void show_log(struct rev_info *opt)
 		if (cmit_fmt_is_mail(ctx.fmt))
 			next_commentary_block(opt, &msgbuf);
 		strbuf_addstr(&msgbuf, ctx.notes_message);
-	}
-
-	if (opt->show_log_size && !opt->use_ref_filter) {
-		fprintf(opt->diffopt.file, "log size %i\n", (int)msgbuf.len);
-		graph_show_oneline(opt->graph);
 	}
 
 	/*
