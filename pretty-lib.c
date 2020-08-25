@@ -175,6 +175,8 @@ void ref_pretty_print_commit(struct pretty_print_context *pp,
 		format.format = "Author: %(authorname) %(authoremail)\nCommit: %(committername) %(committeremail)\n\n%(subject)\n%(contents:body)";
 	} else if (pp->fmt == CMIT_FMT_FULLER) {
 		format.format = "Author:     %(authorname) %(authoremail)\nAuthorDate: %(authordate)\nCommit:     %(committername) %(committeremail)\nCommitDate: %(committerdate)\n\n%(subject)\n%(contents:body)";
+	} else if (pp->fmt == CMIT_FMT_RAW) {
+		format.format = "tree %(tree)\nparent %(parent)\nauthor %(author)\ncommitter %(committer)\n\n%(subject)\n%(contents:body)";
 	}
 
 	format.need_newline_at_eol = 0;
