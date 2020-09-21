@@ -164,6 +164,7 @@ void ref_pretty_print_commit(struct pretty_print_context *pp,
 	if (pp->fmt == CMIT_FMT_USERFORMAT) {
 		strbuf_expand(&sb_fmt, usr_fmt, convert_format, &fmt_ctx);
 		format.format = sb_fmt.buf;
+		indent = 0;
 	} else if (pp->fmt == CMIT_FMT_DEFAULT || pp->fmt == CMIT_FMT_MEDIUM) {
 		format.format = "Author: %(authorname) %(authoremail)\nDate:   %(authordate)\n\n%(subject)\n%(contents:body)";
 	} else if (pp->fmt == CMIT_FMT_ONELINE) {
